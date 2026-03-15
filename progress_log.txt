@@ -3,3 +3,4 @@ fix(api): handle errors on 2026-03-12
 feat(api): connect frontend to backend on 2026-03-13
 style(ui): improve UI styling on 2026-03-14
 refactor: clean code on 2026-03-14
+fix(api): handle errors on 2026-03-15
