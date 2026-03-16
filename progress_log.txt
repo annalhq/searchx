@@ -7,3 +7,4 @@ fix(api): handle errors on 2026-03-15
 style(ui): improve UI styling on 2026-03-15
 feat(search): integrate SearxNG on 2026-03-15
 fix(api): handle errors on 2026-03-16
+feat(api): connect frontend to backend on 2026-03-16
