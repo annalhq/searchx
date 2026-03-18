@@ -11,3 +11,4 @@ feat(api): connect frontend to backend on 2026-03-16
 refactor: clean code on 2026-03-17
 refactor: clean code on 2026-03-17
 style(ui): improve UI styling on 2026-03-17
+feat(search): add filters on 2026-03-18
