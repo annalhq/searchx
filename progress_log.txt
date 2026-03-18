@@ -12,3 +12,4 @@ refactor: clean code on 2026-03-17
 refactor: clean code on 2026-03-17
 style(ui): improve UI styling on 2026-03-17
 feat(search): add filters on 2026-03-18
+fix(api): handle errors on 2026-03-18
