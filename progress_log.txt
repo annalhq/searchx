@@ -16,3 +16,4 @@ fix(api): handle errors on 2026-03-18
 style(ui): improve UI styling on 2026-03-19
 refactor: clean code on 2026-03-20
 refactor: clean code on 2026-03-20
+feat(ui): add homepage layout on 2026-03-20
