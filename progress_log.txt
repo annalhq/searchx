@@ -18,3 +18,4 @@ refactor: clean code on 2026-03-20
 refactor: clean code on 2026-03-20
 feat(ui): add homepage layout on 2026-03-20
 refactor: clean code on 2026-03-21
+fix(ui): fix responsiveness on 2026-03-21
