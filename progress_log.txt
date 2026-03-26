@@ -24,3 +24,4 @@ feat(ui): add homepage layout on 2026-03-23
 feat(search): add filters on 2026-03-24
 feat(api): connect frontend to backend on 2026-03-24
 feat(ui): add homepage layout on 2026-03-25
+fix(api): handle errors on 2026-03-26
