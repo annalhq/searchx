@@ -27,3 +27,4 @@ feat(ui): add homepage layout on 2026-03-25
 fix(api): handle errors on 2026-03-26
 refactor: clean code on 2026-03-27
 feat(ui): add homepage layout on 2026-03-27
+fix(ui): fix responsiveness on 2026-03-27
