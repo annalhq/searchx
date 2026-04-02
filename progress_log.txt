@@ -38,3 +38,4 @@ fix(ui): fix responsiveness on 2026-03-31
 feat(ui): add search bar on 2026-04-01
 feat(search): integrate SearxNG on 2026-04-01
 refactor: clean code on 2026-04-01
+style(ui): improve UI styling on 2026-04-02
