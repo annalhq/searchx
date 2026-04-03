@@ -40,3 +40,4 @@ feat(search): integrate SearxNG on 2026-04-01
 refactor: clean code on 2026-04-01
 style(ui): improve UI styling on 2026-04-02
 feat(ui): add search bar on 2026-04-03
+feat(search): add filters on 2026-04-03
