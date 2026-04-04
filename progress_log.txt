@@ -42,3 +42,4 @@ style(ui): improve UI styling on 2026-04-02
 feat(ui): add search bar on 2026-04-03
 feat(search): add filters on 2026-04-03
 feat(api): connect frontend to backend on 2026-04-04
+feat(search): add filters on 2026-04-04
