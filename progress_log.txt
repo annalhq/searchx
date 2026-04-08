@@ -50,3 +50,4 @@ fix(ui): fix responsiveness on 2026-04-07
 fix(api): handle errors on 2026-04-07
 feat(ui): add search bar on 2026-04-08
 fix(api): handle errors on 2026-04-08
+feat(search): integrate SearxNG on 2026-04-08
