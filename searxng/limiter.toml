@@ -1,0 +1,14 @@
+# SearXNG Bot Detection / Rate Limiter Configuration
+# Disable all rate limiting for local backend access
+
+[botdetection.ip_limit]
+link_token = false
+
+[botdetection.ip_lists]
+# Allow all Docker internal/bridge subnets and localhost
+pass_ip = [
+  '127.0.0.0/8',
+  '10.0.0.0/8',
+  '172.16.0.0/12',
+  '192.168.0.0/16',
+]

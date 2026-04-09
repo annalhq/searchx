@@ -102,6 +102,11 @@ async def search(
             resp = await client.get(
                 SEARXNG_URL,
                 params={"q": q, "format": "json"},
+                headers={
+                    "X-Forwarded-For": "127.0.0.1",
+                    "X-Real-IP": "127.0.0.1",
+                    "User-Agent": "Mozilla/5.0 (SearchX-Backend/1.0)",
+                },
             )
             resp.raise_for_status()
             raw = resp.json()
