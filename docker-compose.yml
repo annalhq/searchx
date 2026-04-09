@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searchx_searxng
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080/
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: searchx_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - searxng
+    restart: unless-stopped
