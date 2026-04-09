@@ -53,3 +53,4 @@ fix(api): handle errors on 2026-04-08
 feat(search): integrate SearxNG on 2026-04-08
 feat(search): integrate SearxNG on 2026-04-09
 feat(search): integrate SearxNG on 2026-04-09
+refactor: clean code on 2026-04-09
