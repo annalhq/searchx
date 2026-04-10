@@ -26,3 +26,39 @@ services:
     depends_on:
       - searxng
     restart: unless-stopped
+
+  rust-node-1:
+    build:
+      context: ./rust-private-chain
+    container_name: searchx_rust_node_1
+    ports:
+      - "9000:9000"
+    environment:
+      - NODE_ID=searchx-node-1
+      - BIND_ADDRESS=0.0.0.0:9000
+      - SEED_PEERS=http://rust-node-2:9000,http://rust-node-3:9000
+    restart: unless-stopped
+
+  rust-node-2:
+    build:
+      context: ./rust-private-chain
+    container_name: searchx_rust_node_2
+    ports:
+      - "9001:9000"
+    environment:
+      - NODE_ID=searchx-node-2
+      - BIND_ADDRESS=0.0.0.0:9000
+      - SEED_PEERS=http://rust-node-1:9000,http://rust-node-3:9000
+    restart: unless-stopped
+
+  rust-node-3:
+    build:
+      context: ./rust-private-chain
+    container_name: searchx_rust_node_3
+    ports:
+      - "9002:9000"
+    environment:
+      - NODE_ID=searchx-node-3
+      - BIND_ADDRESS=0.0.0.0:9000
+      - SEED_PEERS=http://rust-node-1:9000,http://rust-node-2:9000
+    restart: unless-stopped

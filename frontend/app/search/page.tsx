@@ -24,6 +24,10 @@ interface SearXNGResponse {
 }
 
 // ── Fetch helper (server side) ────────────────────────────────────────────────
+const SEARXNG_BASE_URL =
+  process.env.SEARXNG_INTERNAL_URL ??
+  process.env.NEXT_PUBLIC_SEARXNG_BASE_URL ??
+  "http://localhost:8080";
 
 async function fetchResults(
   query: string,
@@ -36,13 +40,10 @@ async function fetchResults(
   if (timeRange) params.set("time_range", timeRange);
 
   try {
-    const res = await fetch(
-      `http://127.0.0.1:8080/search?${params.toString()}`,
-      {
-        next: { revalidate: 60 },
-        headers: { Accept: "application/json" },
-      }
-    );
+    const res = await fetch(`${SEARXNG_BASE_URL}/search?${params.toString()}`, {
+      next: { revalidate: 60 },
+      headers: { Accept: "application/json" },
+    });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -160,7 +161,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   fontSize: "0.85em",
                 }}
               >
-                localhost:8080
+                {SEARXNG_BASE_URL}
               </code>
             </p>
           </div>

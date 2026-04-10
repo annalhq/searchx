@@ -57,9 +57,24 @@ uvicorn main:app --reload --port 8000
 3. Deploy to **Base Sepolia** using MetaMask  
 4. Add contract address to `.env`  
 
-### 4. Run Frontend
+### 4. Run the Private Rust Chain
+
+```bash
+docker compose up rust-node-1 rust-node-2 rust-node-3 -d
+```
+
+The nodes expose `POST /verify` to validate a SearchX block and `POST /blocks` to append a verified block to the private ledger.
+
+### 5. Run Frontend
 
 ```bash
 cd frontend
+cp .env.example .env.local
 npm install
 npm run dev
+```
+
+If frontend runs inside Docker, set:
+
+```bash
+SEARXNG_INTERNAL_URL=http://searxng:8080

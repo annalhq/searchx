@@ -1,11 +1,16 @@
 import type { NextConfig } from "next";
 
+const searxngProxyBase =
+  process.env.SEARXNG_INTERNAL_URL ??
+  process.env.NEXT_PUBLIC_SEARXNG_BASE_URL ??
+  "http://localhost:8080";
+
 const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
         source: "/api/searxng/:path*",
-        destination: "http://127.0.0.1:8080/:path*",
+        destination: `${searxngProxyBase}/:path*`,
       },
     ];
   },
