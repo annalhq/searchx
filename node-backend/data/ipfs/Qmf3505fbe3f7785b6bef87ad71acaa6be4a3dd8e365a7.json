@@ -1,0 +1,15 @@
+{
+  "query": "new york",
+  "archivedAt": "2026-04-10T20:28:00.087Z",
+  "merkleRoot": "0xa4b4fc7d05fee6ba3ee759de5d6d7fefc45ebe77868bf108f98c99d94d8e666a",
+  "results": [
+    {
+      "url": "https://www.britannica.com/place/New-York-City",
+      "title": "New York City | Layout, Map, Economy, Culture, Facts, & History | Britannica",
+      "snippet": "New York City, city and port located at the mouth of the Hudson River, southeastern New York state, considered the most influential American metropolis and the country's financial and cultural center. New York City comprises five boroughs—Manhattan, Brooklyn, the Bronx, Queens, and Staten Island.",
+      "pageHTML": "",
+      "contentHash": "a4b4fc7d05fee6ba3ee759de5d6d7fefc45ebe77868bf108f98c99d94d8e666a",
+      "fetchedAt": "2026-04-10T20:28:00.086Z"
+    }
+  ]
+}

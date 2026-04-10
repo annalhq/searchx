@@ -1,0 +1,15 @@
+{
+  "query": "new york times nanjiang massacre",
+  "archivedAt": "2026-04-10T20:33:57.366Z",
+  "merkleRoot": "0x736a13157d558633415fbc960370cdbfdec343ac9ff52c71408921ff3ad67188",
+  "results": [
+    {
+      "url": "https://www.nytimes.com/video/world/1194817101571/nanjing-massacre.html",
+      "title": "Nanjing Massacre - The New York Times",
+      "snippet": "14 Mar 2006 · The 1937 sacking of Nanjing China's capital of the time has come to symbolize China's injuries at the hands of its neighbor for decades.",
+      "pageHTML": "",
+      "contentHash": "736a13157d558633415fbc960370cdbfdec343ac9ff52c71408921ff3ad67188",
+      "fetchedAt": "2026-04-10T20:33:57.366Z"
+    }
+  ]
+}

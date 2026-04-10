@@ -2,16 +2,71 @@
  * records.js — Blockchain records route.
  *
  * GET /api/records         — List all on-chain records (block explorer)
+ *                            Enriched with IPFS metadata (query, url, domain, title)
  * GET /api/records/count   — Get total record count
+ * GET /api/records/search  — Search records by domain, title, or proof ID
  */
 
 const express = require("express");
 const { getAllRecords, getSearchCount, getStatus } = require("../services/blockchain");
+const { getFromIPFS } = require("../services/ipfs");
 
 const router = express.Router();
 
 /**
- * GET /api/records — Returns all on-chain records for the block explorer.
+ * Extract the hostname from a URL string, safely.
+ */
+function extractDomain(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url || "";
+  }
+}
+
+/**
+ * Enrich a single blockchain record with its IPFS metadata.
+ */
+async function enrichRecord(record) {
+  const enriched = {
+    id: record.id,
+    queryHash: record.queryHash,
+    resultHash: record.resultHash,
+    ipfsCID: record.ipfsCID,
+    timestamp: record.timestamp,
+    recordedAt: new Date(record.timestamp * 1000).toISOString(),
+    submitter: record.submitter,
+    // Enriched fields — defaults
+    query: null,
+    url: null,
+    domain: null,
+    title: null,
+    resultCount: 0,
+  };
+
+  try {
+    const content = await getFromIPFS(record.ipfsCID);
+    if (content) {
+      enriched.query = content.query || null;
+      enriched.resultCount = content.results?.length || 0;
+
+      // Extract url/domain/title from first result
+      if (content.results && content.results.length > 0) {
+        const first = content.results[0];
+        enriched.url = first.url || null;
+        enriched.domain = first.url ? extractDomain(first.url) : null;
+        enriched.title = first.title || null;
+      }
+    }
+  } catch {
+    // IPFS read failed — enriched fields stay null, which is fine
+  }
+
+  return enriched;
+}
+
+/**
+ * GET /api/records — Returns all on-chain records, enriched with IPFS data.
  */
 router.get("/", async (req, res) => {
   try {
@@ -24,21 +79,16 @@ router.get("/", async (req, res) => {
       });
     }
 
-    const records = await getAllRecords();
+    const rawRecords = await getAllRecords();
+
+    // Enrich all records in parallel
+    const records = await Promise.all(rawRecords.map(enrichRecord));
 
     return res.json({
       count: records.length,
       contractAddress: status.contractAddress,
       chainId: status.chainId,
-      records: records.map((r) => ({
-        id: r.id,
-        queryHash: r.queryHash,
-        resultHash: r.resultHash,
-        ipfsCID: r.ipfsCID,
-        timestamp: r.timestamp,
-        recordedAt: new Date(r.timestamp * 1000).toISOString(),
-        submitter: r.submitter,
-      })),
+      records,
     });
   } catch (err) {
     console.error("Records error:", err);

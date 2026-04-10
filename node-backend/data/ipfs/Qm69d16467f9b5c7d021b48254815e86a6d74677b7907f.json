@@ -1,0 +1,15 @@
+{
+  "query": "new york times nanjiang massacre",
+  "archivedAt": "2026-04-10T20:35:30.945Z",
+  "merkleRoot": "0x70dec2503225799fe25031184efbb1e7507dfed12e5d33ce8241c19b070bccd5",
+  "results": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Nanjing_Massacre",
+      "title": "Nanjing Massacre - Wikipedia",
+      "snippet": "The Japanese massacred Hui Muslims in their mosques in Nanjing and destroyed Hui mosques in other parts of China. Stationed in Nanjing, an eyewitness, journalist Frank Tillman Durdin, of The New York Times, sent an article to his newspaper where he described the Imperial Japanese Army's entry ...",
+      "pageHTML": "",
+      "contentHash": "70dec2503225799fe25031184efbb1e7507dfed12e5d33ce8241c19b070bccd5",
+      "fetchedAt": "2026-04-10T20:35:30.944Z"
+    }
+  ]
+}
