@@ -623,3 +623,17 @@ body {
   gap: 0.5rem;
   animation: fadeUp 0.15s ease both;
 }
+
+/* ── Block Explorer ────────────────────────────────────── */
+.sx-explorer-row:hover {
+  background: color-mix(in srgb, var(--sx-accent) 4%, transparent);
+}
+
+.sx-explorer-row:last-child {
+  border-bottom: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

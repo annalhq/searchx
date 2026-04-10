@@ -18,6 +18,7 @@ const { initBlockchain, getSearchCount, getStatus } = require("./services/blockc
 const searchRouter = require("./routes/search");
 const archiveRouter = require("./routes/archive");
 const verifyRouter = require("./routes/verify");
+const recordsRouter = require("./routes/records");
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use("/api/search", searchRouter);
 app.use("/api/archive", archiveRouter);
 app.use("/api/verify", verifyRouter);
+app.use("/api/records", recordsRouter);
 
 // Status / health endpoint
 app.get("/api/status", async (req, res) => {

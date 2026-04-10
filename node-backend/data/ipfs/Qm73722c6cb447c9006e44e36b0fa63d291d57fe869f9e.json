@@ -1,0 +1,15 @@
+{
+  "query": "blockchain",
+  "archivedAt": "2026-04-10T20:21:22.934Z",
+  "merkleRoot": "0xf6c7877906173b01e105706aa8e89682992644aac9bbbe3e0d06a7fb56152eb3",
+  "results": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Blockchain",
+      "title": "Blockchain - Wikipedia",
+      "snippet": "Blockchain formation. The main chain (black) consists of the longest series of blocks from the genesis block (green) to the current block. Orphan blocks (purple) exist outside of the main chain. A blockchain is a decentralized, distributed, and often public, digital ledger consisting of records called blocks that are used to record transactions across many computers so that any involved block ...",
+      "pageHTML": "",
+      "contentHash": "f6c7877906173b01e105706aa8e89682992644aac9bbbe3e0d06a7fb56152eb3",
+      "fetchedAt": "2026-04-10T20:21:22.932Z"
+    }
+  ]
+}

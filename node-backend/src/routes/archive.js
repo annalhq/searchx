@@ -8,8 +8,8 @@
  *   1. Fetch webpage HTML for each selected result
  *   2. SHA-256 hash each result's content
  *   3. Build Merkle tree of all content hashes → Merkle root
- *   4. Upload full content archive to IPFS → CID
- *   5. Store (queryHash, merkleRoot, CID) on blockchain → proof ID
+ *   4. Upload full content archive to local content store → CID
+ *   5. Store (queryHash, merkleRoot, CID) on blockchain → proof ID + tx hash
  *   6. Return proof ID + verification data
  */
 
@@ -69,7 +69,7 @@ router.post("/", async (req, res) => {
     const { root: merkleRoot, leaves } = buildMerkleTree(contentStrings);
     console.log(`   Merkle root: ${merkleRoot}`);
 
-    // ── 4. Upload to IPFS ────────────────────────────────────────────────────
+    // ── 4. Upload to local content store ─────────────────────────────────────
     const ipfsPayload = {
       query: query.trim(),
       archivedAt: new Date().toISOString(),
@@ -85,28 +85,29 @@ router.post("/", async (req, res) => {
     };
 
     const ipfsCID = await uploadToIPFS(ipfsPayload);
-    console.log(`   IPFS CID: ${ipfsCID}`);
+    console.log(`   CID: ${ipfsCID}`);
 
     // ── 5. Store on blockchain ───────────────────────────────────────────────
     const queryHash = sha256Bytes32(query.trim().toLowerCase());
     const chainResult = await storeSearch(queryHash, merkleRoot, ipfsCID);
-    console.log(`   Proof ID: ${chainResult.proofId}, TX: ${chainResult.txHash}`);
+    console.log(`   ✅ Proof ID: ${chainResult.proofId}, TX: ${chainResult.txHash}`);
 
     // ── 6. Return response ───────────────────────────────────────────────────
     return res.json({
       success: true,
       proofId: chainResult.proofId,
       txHash: chainResult.txHash,
+      blockNumber: chainResult.blockNumber,
+      gasUsed: chainResult.gasUsed,
       queryHash: queryHash,
       merkleRoot: merkleRoot,
       ipfsCID: ipfsCID,
       timestamp: chainResult.timestamp,
-      mock: chainResult.mock || false,
       resultCount: archivedResults.length,
       contentHashes: contentHashes,
     });
   } catch (err) {
-    console.error("Archive error:", err);
+    console.error("❌ Archive error:", err);
     return res.status(500).json({ error: `Archive failed: ${err.message}` });
   }
 });

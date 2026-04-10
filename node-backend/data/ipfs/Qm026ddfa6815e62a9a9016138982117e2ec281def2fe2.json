@@ -1,0 +1,15 @@
+{
+  "query": "test search",
+  "archivedAt": "2026-04-10T20:17:37.504Z",
+  "merkleRoot": "0xb40c65a3b213f0cc943fb539bc8d232611a702b389a0fd31f3397916bed66980",
+  "results": [
+    {
+      "url": "https://example.com",
+      "title": "Example Domain",
+      "snippet": "This domain is for use in illustrative examples.",
+      "pageHTML": "",
+      "contentHash": "b40c65a3b213f0cc943fb539bc8d232611a702b389a0fd31f3397916bed66980",
+      "fetchedAt": "2026-04-10T20:17:37.503Z"
+    }
+  ]
+}

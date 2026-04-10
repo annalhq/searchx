@@ -1,86 +1,96 @@
 /**
- * ipfs.js — IPFS content storage service.
+ * ipfs.js — Local content-addressable storage service.
  *
- * Uploads content to a local IPFS node and returns the CID.
- * Falls back to a mock CID if IPFS is unavailable (for development).
+ * Simulates IPFS by storing content as JSON files keyed by their
+ * SHA-256 hash (acting as a CID). This avoids requiring an external
+ * IPFS daemon for local development while preserving the same
+ * content-addressable semantics.
+ *
+ * Files are stored in: node-backend/data/ipfs/{hash}.json
  */
 
-const config = require("../config");
+const fs = require("fs");
+const path = require("path");
 const { sha256 } = require("./hasher");
 
-let ipfsClient = null;
-let ipfsAvailable = false;
+const STORAGE_DIR = path.join(__dirname, "..", "..", "data", "ipfs");
 
 /**
- * Initialise the IPFS client connection.
- * Uses dynamic import since ipfs-http-client is ESM-only in v60+.
+ * Initialise the local storage directory.
  */
 async function initIPFS() {
   try {
-    // ipfs-http-client v60+ is ESM
-    const { create } = await import("ipfs-http-client");
-    ipfsClient = create({ url: config.IPFS_API_URL });
-
-    // Quick connectivity check
-    const id = await ipfsClient.id();
-    ipfsAvailable = true;
-    console.log(`✅ IPFS connected: ${id.id}`);
+    fs.mkdirSync(STORAGE_DIR, { recursive: true });
+    const files = fs.readdirSync(STORAGE_DIR).filter((f) => f.endsWith(".json"));
+    console.log(`✅ Local content store ready: ${STORAGE_DIR}`);
+    console.log(`   ${files.length} existing archive(s) found`);
   } catch (err) {
-    console.warn(`⚠️  IPFS not available (${err.message}) — using mock CIDs for development.`);
-    ipfsAvailable = false;
+    console.error(`❌ Failed to initialise local content store: ${err.message}`);
+    throw err;
   }
 }
 
 /**
- * Upload content to IPFS and return the CID.
- * If IPFS is not available, returns a deterministic mock CID.
+ * Upload content to local storage and return a deterministic CID.
  *
- * @param {object} content - JSON-serialisable content to upload
- * @returns {Promise<string>} IPFS CID string
+ * The CID is the SHA-256 hash of the JSON-serialised content,
+ * prefixed with "Qm" to visually resemble an IPFS CID.
+ *
+ * @param {object} content - JSON-serialisable content to store
+ * @returns {Promise<string>} Content identifier (CID)
  */
 async function uploadToIPFS(content) {
   const jsonStr = JSON.stringify(content, null, 2);
-
-  if (ipfsAvailable && ipfsClient) {
-    try {
-      const result = await ipfsClient.add(jsonStr);
-      console.log(`📌 IPFS uploaded: ${result.path} (${jsonStr.length} bytes)`);
-      return result.path;
-    } catch (err) {
-      console.error("IPFS upload failed:", err.message);
-      // Fall through to mock
-    }
-  }
-
-  // Mock CID for development (deterministic based on content hash)
   const hash = sha256(jsonStr);
-  const mockCID = `Qm${hash.substring(0, 44)}`;
-  console.log(`🧪 Mock IPFS CID: ${mockCID} (${jsonStr.length} bytes)`);
-  return mockCID;
+  const cid = `Qm${hash.substring(0, 44)}`;
+
+  const filePath = path.join(STORAGE_DIR, `${cid}.json`);
+
+  try {
+    fs.writeFileSync(filePath, jsonStr, "utf8");
+    console.log(`📌 Local store: ${cid} (${jsonStr.length} bytes)`);
+    return cid;
+  } catch (err) {
+    console.error(`❌ Local store write failed: ${err.message}`);
+    throw new Error(`Content storage failed: ${err.message}`);
+  }
 }
 
 /**
- * Retrieve content from IPFS by CID.
- * @param {string} cid - IPFS Content Identifier
+ * Retrieve content from local storage by CID.
+ * @param {string} cid - Content identifier
  * @returns {Promise<object|null>} Parsed JSON content, or null on failure
  */
 async function getFromIPFS(cid) {
-  if (!ipfsAvailable || !ipfsClient) {
-    console.warn("IPFS not available — cannot retrieve content for CID:", cid);
-    return null;
-  }
+  const filePath = path.join(STORAGE_DIR, `${cid}.json`);
 
   try {
-    const chunks = [];
-    for await (const chunk of ipfsClient.cat(cid)) {
-      chunks.push(chunk);
+    if (!fs.existsSync(filePath)) {
+      console.warn(`⚠️  Content not found for CID: ${cid}`);
+      return null;
     }
-    const data = Buffer.concat(chunks).toString("utf8");
+
+    const data = fs.readFileSync(filePath, "utf8");
     return JSON.parse(data);
   } catch (err) {
-    console.error(`IPFS retrieval failed for ${cid}:`, err.message);
+    console.error(`❌ Content retrieval failed for ${cid}: ${err.message}`);
     return null;
   }
 }
 
-module.exports = { initIPFS, uploadToIPFS, getFromIPFS };
+/**
+ * List all stored CIDs.
+ * @returns {string[]} Array of CID strings
+ */
+function listAllCIDs() {
+  try {
+    return fs
+      .readdirSync(STORAGE_DIR)
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => f.replace(".json", ""));
+  } catch {
+    return [];
+  }
+}
+
+module.exports = { initIPFS, uploadToIPFS, getFromIPFS, listAllCIDs };

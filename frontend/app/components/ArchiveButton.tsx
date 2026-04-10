@@ -6,11 +6,12 @@ import { Shield, ShieldCheck, Loader2, ExternalLink, Copy, Check } from "lucide-
 interface ArchiveResult {
   proofId: number;
   txHash: string;
+  blockNumber: number;
+  gasUsed: string;
   queryHash: string;
   merkleRoot: string;
   ipfsCID: string;
   timestamp: number;
-  mock: boolean;
 }
 
 interface ArchiveButtonProps {
@@ -87,14 +88,42 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
             <div className="sx-archive-details-header">
               <ShieldCheck size={14} />
               <span>Blockchain Anchored</span>
-              {archived.mock && (
-                <span className="sx-archive-mock-badge">mock</span>
-              )}
+              <span
+                style={{
+                  fontSize: "0.65rem",
+                  padding: "1px 6px",
+                  borderRadius: "4px",
+                  background: "color-mix(in srgb, #22c55e 15%, transparent)",
+                  color: "#22c55e",
+                  fontWeight: 600,
+                }}
+              >
+                CONFIRMED
+              </span>
             </div>
 
             <div className="sx-archive-detail-row">
               <span className="sx-archive-label">Proof ID</span>
               <span className="sx-archive-value">{archived.proofId}</span>
+            </div>
+
+            <div className="sx-archive-detail-row">
+              <span className="sx-archive-label">TX Hash</span>
+              <div className="sx-archive-hash-row">
+                <code>{archived.txHash.substring(0, 18)}…</code>
+                <button
+                  onClick={() => handleCopy(archived.txHash, "tx")}
+                  className="sx-copy-btn"
+                  title="Copy TX hash"
+                >
+                  {copied === "tx" ? <Check size={11} /> : <Copy size={11} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="sx-archive-detail-row">
+              <span className="sx-archive-label">Block</span>
+              <span className="sx-archive-value">#{archived.blockNumber}</span>
             </div>
 
             <div className="sx-archive-detail-row">
@@ -126,7 +155,7 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
             </div>
 
             <div className="sx-archive-detail-row">
-              <span className="sx-archive-label">IPFS CID</span>
+              <span className="sx-archive-label">Content CID</span>
               <div className="sx-archive-hash-row">
                 <code>{archived.ipfsCID.substring(0, 18)}…</code>
                 <button
@@ -138,22 +167,6 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
                 </button>
               </div>
             </div>
-
-            {archived.txHash && archived.txHash !== "0x" + "0".repeat(64) && (
-              <div className="sx-archive-detail-row">
-                <span className="sx-archive-label">TX Hash</span>
-                <div className="sx-archive-hash-row">
-                  <code>{archived.txHash.substring(0, 18)}…</code>
-                  <button
-                    onClick={() => handleCopy(archived.txHash, "tx")}
-                    className="sx-copy-btn"
-                    title="Copy TX hash"
-                  >
-                    {copied === "tx" ? <Check size={11} /> : <Copy size={11} />}
-                  </button>
-                </div>
-              </div>
-            )}
 
             <a
               href={`/verify?id=${archived.proofId}`}
@@ -175,7 +188,7 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
         onClick={handleArchive}
         disabled={loading}
         className="sx-archive-btn"
-        title="Archive this result to blockchain + IPFS"
+        title="Archive this result to blockchain"
       >
         {loading ? (
           <Loader2 size={13} className="sx-spin" />
