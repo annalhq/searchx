@@ -78,3 +78,4 @@ If frontend runs inside Docker, set:
 
 ```bash
 SEARXNG_INTERNAL_URL=http://searxng:8080
+```
