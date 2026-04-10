@@ -20,7 +20,18 @@ interface SearXNGResponse {
     urls?: { title: string; url: string }[];
   }[];
   suggestions?: string[];
-  answers?: string[];
+  answers?: Array<string | { answer?: string; url?: string }>;
+}
+
+function normalizeAnswerItem(item: string | { answer?: string; url?: string }) {
+  if (typeof item === "string") {
+    return { text: item, url: undefined as string | undefined };
+  }
+
+  return {
+    text: item.answer ?? "",
+    url: item.url,
+  };
 }
 
 // ── Fetch helper (server side) ────────────────────────────────────────────────
@@ -33,9 +44,13 @@ async function fetchResults(
   query: string,
   page: number,
   category: string,
-  timeRange: string
+  timeRange: string,
 ): Promise<SearXNGResponse | null> {
-  const params = new URLSearchParams({ q: query, format: "json", pageno: String(page) });
+  const params = new URLSearchParams({
+    q: query,
+    format: "json",
+    pageno: String(page),
+  });
   if (category) params.set("categories", category);
   if (timeRange) params.set("time_range", timeRange);
 
@@ -54,7 +69,12 @@ async function fetchResults(
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 interface SearchPageProps {
-  searchParams: Promise<{ q?: string; p?: string; category?: string; time_range?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    p?: string;
+    category?: string;
+    time_range?: string;
+  }>;
 }
 
 export async function generateMetadata({ searchParams }: SearchPageProps) {
@@ -78,7 +98,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const data = await fetchResults(query, page, category, timeRange);
 
   return (
-    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}
+    >
       {/* ── Top bar ── */}
       <header
         style={{
@@ -181,17 +203,33 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               <aside style={{ margin: "1rem 0" }}>
                 {data.infoboxes.slice(0, 1).map((box, i) => (
                   <div key={i} className="sx-infobox">
-                    <p style={{ fontWeight: 600, marginBottom: "0.4rem", fontSize: "0.95rem" }}>
+                    <p
+                      style={{
+                        fontWeight: 600,
+                        marginBottom: "0.4rem",
+                        fontSize: "0.95rem",
+                      }}
+                    >
                       {box.infobox}
                     </p>
                     {box.content && (
                       <p
-                        style={{ color: "var(--sx-muted)", fontSize: "0.875rem" }}
+                        style={{
+                          color: "var(--sx-muted)",
+                          fontSize: "0.875rem",
+                        }}
                         dangerouslySetInnerHTML={{ __html: box.content }}
                       />
                     )}
                     {box.urls && box.urls.length > 0 && (
-                      <div style={{ marginTop: "0.6rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                      <div
+                        style={{
+                          marginTop: "0.6rem",
+                          display: "flex",
+                          gap: "0.5rem",
+                          flexWrap: "wrap",
+                        }}
+                      >
                         {box.urls.slice(0, 4).map((u, j) => (
                           <a
                             key={j}
@@ -220,14 +258,39 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 style={{
                   margin: "0.75rem 0",
                   padding: "0.85rem 1.1rem",
-                  background: "color-mix(in srgb, var(--sx-accent) 8%, var(--sx-surface))",
-                  border: "1.5px solid color-mix(in srgb, var(--sx-accent) 25%, transparent)",
+                  background:
+                    "color-mix(in srgb, var(--sx-accent) 8%, var(--sx-surface))",
+                  border:
+                    "1.5px solid color-mix(in srgb, var(--sx-accent) 25%, transparent)",
                   borderRadius: "var(--sx-radius)",
                   fontSize: "0.9rem",
                 }}
               >
-                <span style={{ fontWeight: 600 }}>Answer: </span>
-                {data.answers[0]}
+                {(() => {
+                  const normalized = normalizeAnswerItem(data.answers[0]);
+                  if (!normalized.text) return null;
+
+                  return (
+                    <>
+                      <span style={{ fontWeight: 600 }}>Answer: </span>
+                      {normalized.url ? (
+                        <a
+                          href={normalized.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: "var(--sx-accent)",
+                            textDecoration: "none",
+                          }}
+                        >
+                          {normalized.text}
+                        </a>
+                      ) : (
+                        normalized.text
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
 
@@ -249,8 +312,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {/* No results */}
             {data.results.length === 0 && (
-              <div style={{ padding: "3rem 0", textAlign: "center", color: "var(--sx-muted)" }}>
-                <p style={{ fontSize: "1.2rem", marginBottom: "0.4rem" }}>No results found</p>
+              <div
+                style={{
+                  padding: "3rem 0",
+                  textAlign: "center",
+                  color: "var(--sx-muted)",
+                }}
+              >
+                <p style={{ fontSize: "1.2rem", marginBottom: "0.4rem" }}>
+                  No results found
+                </p>
                 <p style={{ fontSize: "0.875rem" }}>
                   Try different keywords or remove filters.
                 </p>
@@ -261,18 +332,36 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <Suspense fallback={<ResultsSkeleton />}>
               <div>
                 {data.results.map((result, i) => (
-                  <ResultCard key={`${result.url}-${i}`} result={result} index={i} />
+                  <ResultCard
+                    key={`${result.url}-${i}`}
+                    result={result}
+                    index={i}
+                  />
                 ))}
               </div>
             </Suspense>
 
             {/* Suggestions */}
             {data.suggestions && data.suggestions.length > 0 && (
-              <div style={{ marginTop: "1.5rem", borderTop: "1px solid var(--sx-border)", paddingTop: "1rem" }}>
-                <p style={{ fontSize: "0.78rem", color: "var(--sx-muted)", marginBottom: "0.5rem" }}>
+              <div
+                style={{
+                  marginTop: "1.5rem",
+                  borderTop: "1px solid var(--sx-border)",
+                  paddingTop: "1rem",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.78rem",
+                    color: "var(--sx-muted)",
+                    marginBottom: "0.5rem",
+                  }}
+                >
                   Related searches
                 </p>
-                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                <div
+                  style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}
+                >
                   {data.suggestions.slice(0, 8).map((s) => (
                     <Link
                       key={s}
