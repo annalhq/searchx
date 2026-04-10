@@ -44,7 +44,7 @@ async function fetchResults(
   query: string,
   page: number,
   category: string,
-  timeRange: string,
+  timeRange: string
 ): Promise<SearXNGResponse | null> {
   const params = new URLSearchParams({
     q: query,
@@ -98,48 +98,21 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const data = await fetchResults(query, page, category, timeRange);
 
   return (
-    <div
-      style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}
-    >
+    <div className="min-h-dvh flex flex-col bg-base-200">
       {/* ── Top bar ── */}
-      <header
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          background: "var(--sx-bg)",
-          borderBottom: "1px solid var(--sx-border)",
-          backdropFilter: "blur(8px)",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "960px",
-            margin: "0 auto",
-            padding: "0.65rem 1.25rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "1rem",
-          }}
-        >
+      <header className="sticky top-0 z-50 bg-base-100/80 backdrop-blur-xl border-b border-base-300">
+        <div className="max-w-[960px] mx-auto px-5 py-2.5 flex items-center gap-4">
           {/* Logo link */}
           <Link
             href="/"
-            style={{
-              fontWeight: 700,
-              fontSize: "1.15rem",
-              color: "var(--sx-text)",
-              textDecoration: "none",
-              letterSpacing: "-0.03em",
-              flexShrink: 0,
-            }}
+            className="font-bold text-lg tracking-tight text-base-content shrink-0 hover:opacity-70 transition-opacity"
             aria-label="SearchX home"
           >
-            Search<span style={{ color: "var(--sx-accent)" }}>X</span>
+            Search<span className="text-primary">X</span>
           </Link>
 
           {/* Search bar */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="flex-1 min-w-0">
             <Suspense>
               <SearchBar initialQuery={query} compact />
             </Suspense>
@@ -148,15 +121,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       </header>
 
       {/* ── Body ── */}
-      <main
-        style={{
-          maxWidth: "960px",
-          margin: "0 auto",
-          padding: "0.5rem 1.25rem 3rem",
-          width: "100%",
-          flex: 1,
-        }}
-      >
+      <main className="max-w-[960px] mx-auto px-5 pb-12 w-full flex-1">
         {/* Filter bar */}
         <Suspense>
           <FilterBar />
@@ -164,25 +129,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
         {/* Error state */}
         {!data && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "4rem 1rem",
-              color: "var(--sx-muted)",
-            }}
-          >
-            <p style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>⚠️</p>
-            <p style={{ fontWeight: 500 }}>Could not reach SearXNG</p>
-            <p style={{ fontSize: "0.875rem", marginTop: "0.35rem" }}>
+          <div className="text-center py-16 text-base-content/40">
+            <p className="text-4xl mb-3">⚠️</p>
+            <p className="font-medium text-base-content/60">
+              Could not reach SearXNG
+            </p>
+            <p className="text-sm mt-2">
               Make sure SearXNG is running at{" "}
-              <code
-                style={{
-                  background: "var(--sx-surface)",
-                  padding: "0.1rem 0.4rem",
-                  borderRadius: "4px",
-                  fontSize: "0.85em",
-                }}
-              >
+              <code className="bg-base-300 px-1.5 py-0.5 rounded text-xs">
                 {SEARXNG_BASE_URL}
               </code>
             </p>
@@ -191,56 +145,31 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
         {/* Results grid */}
         {data && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr",
-              gap: "0",
-            }}
-          >
+          <div>
             {/* Infobox */}
             {data.infoboxes && data.infoboxes.length > 0 && (
-              <aside style={{ margin: "1rem 0" }}>
+              <aside className="my-4">
                 {data.infoboxes.slice(0, 1).map((box, i) => (
-                  <div key={i} className="sx-infobox">
-                    <p
-                      style={{
-                        fontWeight: 600,
-                        marginBottom: "0.4rem",
-                        fontSize: "0.95rem",
-                      }}
-                    >
-                      {box.infobox}
-                    </p>
+                  <div
+                    key={i}
+                    className="bg-base-100 border border-base-300 rounded-xl p-4"
+                  >
+                    <p className="font-semibold text-sm mb-1">{box.infobox}</p>
                     {box.content && (
                       <p
-                        style={{
-                          color: "var(--sx-muted)",
-                          fontSize: "0.875rem",
-                        }}
+                        className="text-sm text-base-content/50 leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: box.content }}
                       />
                     )}
                     {box.urls && box.urls.length > 0 && (
-                      <div
-                        style={{
-                          marginTop: "0.6rem",
-                          display: "flex",
-                          gap: "0.5rem",
-                          flexWrap: "wrap",
-                        }}
-                      >
+                      <div className="mt-3 flex gap-3 flex-wrap">
                         {box.urls.slice(0, 4).map((u, j) => (
                           <a
                             key={j}
                             href={u.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                              fontSize: "0.78rem",
-                              color: "var(--sx-accent)",
-                              textDecoration: "none",
-                            }}
+                            className="text-xs text-primary hover:underline"
                           >
                             {u.title} →
                           </a>
@@ -254,34 +183,22 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {/* Answers */}
             {data.answers && data.answers.length > 0 && (
-              <div
-                style={{
-                  margin: "0.75rem 0",
-                  padding: "0.85rem 1.1rem",
-                  background:
-                    "color-mix(in srgb, var(--sx-accent) 8%, var(--sx-surface))",
-                  border:
-                    "1.5px solid color-mix(in srgb, var(--sx-accent) 25%, transparent)",
-                  borderRadius: "var(--sx-radius)",
-                  fontSize: "0.9rem",
-                }}
-              >
+              <div className="my-3 p-3.5 bg-primary/5 border border-primary/15 rounded-xl text-sm animate-fadeUp">
                 {(() => {
                   const normalized = normalizeAnswerItem(data.answers[0]);
                   if (!normalized.text) return null;
 
                   return (
                     <>
-                      <span style={{ fontWeight: 600 }}>Answer: </span>
+                      <span className="font-semibold text-primary">
+                        Answer:{" "}
+                      </span>
                       {normalized.url ? (
                         <a
                           href={normalized.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{
-                            color: "var(--sx-accent)",
-                            textDecoration: "none",
-                          }}
+                          className="text-primary hover:underline"
                         >
                           {normalized.text}
                         </a>
@@ -295,13 +212,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             )}
 
             {/* Stats row */}
-            <div
-              style={{
-                padding: "0.6rem 0",
-                fontSize: "0.78rem",
-                color: "var(--sx-muted)",
-              }}
-            >
+            <div className="py-2 text-xs text-base-content/35">
               {data.number_of_results > 0 && (
                 <span>
                   About {data.number_of_results.toLocaleString()} results
@@ -312,17 +223,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {/* No results */}
             {data.results.length === 0 && (
-              <div
-                style={{
-                  padding: "3rem 0",
-                  textAlign: "center",
-                  color: "var(--sx-muted)",
-                }}
-              >
-                <p style={{ fontSize: "1.2rem", marginBottom: "0.4rem" }}>
-                  No results found
-                </p>
-                <p style={{ fontSize: "0.875rem" }}>
+              <div className="py-12 text-center text-base-content/40">
+                <p className="text-lg font-medium mb-1">No results found</p>
+                <p className="text-sm">
                   Try different keywords or remove filters.
                 </p>
               </div>
@@ -330,7 +233,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {/* Result cards */}
             <Suspense fallback={<ResultsSkeleton />}>
-              <div style={{ display: "grid", gap: "0.75rem" }}>
+              <div>
                 {data.results.map((result, i) => (
                   <ResultCard
                     key={`${result.url}-${i}`}
@@ -344,31 +247,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {/* Suggestions */}
             {data.suggestions && data.suggestions.length > 0 && (
-              <div
-                style={{
-                  marginTop: "1.5rem",
-                  borderTop: "1px solid var(--sx-border)",
-                  paddingTop: "1rem",
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: "0.78rem",
-                    color: "var(--sx-muted)",
-                    marginBottom: "0.5rem",
-                  }}
-                >
+              <div className="mt-6 pt-4 border-t border-base-300">
+                <p className="text-xs text-base-content/35 mb-2.5">
                   Related searches
                 </p>
-                <div
-                  style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}
-                >
+                <div className="flex gap-2 flex-wrap">
                   {data.suggestions.slice(0, 8).map((s) => (
                     <Link
                       key={s}
                       href={`/search?q=${encodeURIComponent(s)}${category ? `&category=${category}` : ""}`}
-                      className="sx-chip"
-                      style={{ textDecoration: "none" }}
+                      className="btn btn-xs btn-ghost rounded-full text-base-content/50 hover:text-base-content hover:bg-base-300/50"
                     >
                       {s}
                     </Link>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps {
   currentPage: number;
@@ -22,46 +23,32 @@ export default function Pagination({ currentPage, hasMore }: PaginationProps) {
   if (currentPage <= 1 && !hasMore) return null;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "0.6rem",
-        padding: "2rem 0 1rem",
-      }}
-    >
+    <div className="flex items-center justify-center gap-2 pt-8 pb-4">
       {currentPage > 1 && (
         <button
-          className="sx-chip active"
+          className="btn btn-sm btn-ghost gap-1 rounded-full text-base-content/60 hover:text-base-content"
           onClick={() => goTo(currentPage - 1)}
           aria-label="Previous page"
           id="btn-prev-page"
         >
-          ← Prev
+          <ChevronLeft size={14} />
+          Prev
         </button>
       )}
 
-      <span
-        style={{
-          fontSize: "0.82rem",
-          color: "var(--sx-muted)",
-          padding: "0 0.5rem",
-          minWidth: "5rem",
-          textAlign: "center",
-        }}
-      >
+      <span className="text-sm text-base-content/40 px-3 tabular-nums">
         Page {currentPage}
       </span>
 
       {hasMore && (
         <button
-          className="sx-chip active"
+          className="btn btn-sm btn-ghost gap-1 rounded-full text-base-content/60 hover:text-base-content"
           onClick={() => goTo(currentPage + 1)}
           aria-label="Next page"
           id="btn-next-page"
         >
-          Next →
+          Next
+          <ChevronRight size={14} />
         </button>
       )}
     </div>
