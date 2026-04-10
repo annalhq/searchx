@@ -330,7 +330,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {/* Result cards */}
             <Suspense fallback={<ResultsSkeleton />}>
-              <div>
+              <div style={{ display: "grid", gap: "0.75rem" }}>
                 {data.results.map((result, i) => (
                   <ResultCard
                     key={`${result.url}-${i}`}
