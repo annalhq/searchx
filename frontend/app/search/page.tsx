@@ -336,6 +336,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     key={`${result.url}-${i}`}
                     result={result}
                     index={i}
+                    query={query}
                   />
                 ))}
               </div>

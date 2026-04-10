@@ -71,6 +71,17 @@ export default function HomePage() {
             {label}
           </a>
         ))}
+        <a
+          href="/verify"
+          className="sx-chip"
+          style={{
+            textDecoration: "none",
+            borderColor: "color-mix(in srgb, var(--sx-accent) 40%, transparent)",
+            color: "var(--sx-accent)",
+          }}
+        >
+          🛡 Verify Proof
+        </a>
       </div>
 
       {/* Footer */}

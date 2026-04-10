@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink, Calendar, Globe } from "lucide-react";
+import ArchiveButton from "./ArchiveButton";
 
 export interface SearXNGResult {
   url: string;
@@ -18,6 +19,7 @@ export interface SearXNGResult {
 interface ResultCardProps {
   result: SearXNGResult;
   index: number;
+  query?: string;
 }
 
 function formatUrl(url: string): string {
@@ -38,7 +40,7 @@ function getFavicon(url: string): string {
   }
 }
 
-export default function ResultCard({ result, index }: ResultCardProps) {
+export default function ResultCard({ result, index, query }: ResultCardProps) {
   const engines = result.engines ?? (result.engine ? [result.engine] : []);
   const favicon = getFavicon(result.url);
   const displayUrl = formatUrl(result.url);
@@ -95,31 +97,43 @@ export default function ResultCard({ result, index }: ResultCardProps) {
           />
         )}
 
-        {/* Footer: engines + date */}
-        {(engines.length > 0 || result.publishedDate) && (
-          <div className="flex items-center gap-2 flex-wrap mt-1 min-w-0">
-            <div className="flex items-center gap-1 flex-wrap min-w-0">
-              {engines.map((eng) => (
-                <span key={eng} className="badge badge-ghost badge-xs truncate max-w-[10rem]" title={eng}>
-                  {eng}
-                </span>
-              ))}
-            </div>
-
-            {result.publishedDate && (
-              <div className="flex items-center gap-1 text-xs text-base-content/40 ml-auto shrink-0">
-                <Calendar size={11} />
-                <time dateTime={result.publishedDate}>
-                  {new Date(result.publishedDate).toLocaleDateString(undefined, {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </time>
-              </div>
-            )}
+        {/* Footer: engines + date + archive button */}
+        <div className="flex items-center gap-2 flex-wrap mt-1 min-w-0">
+          <div className="flex items-center gap-1 flex-wrap min-w-0">
+            {engines.map((eng) => (
+              <span key={eng} className="badge badge-ghost badge-xs truncate max-w-[10rem]" title={eng}>
+                {eng}
+              </span>
+            ))}
           </div>
-        )}
+
+          {result.publishedDate && (
+            <div className="flex items-center gap-1 text-xs text-base-content/40 shrink-0">
+              <Calendar size={11} />
+              <time dateTime={result.publishedDate}>
+                {new Date(result.publishedDate).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </time>
+            </div>
+          )}
+
+          {/* Archive button — pushed to right */}
+          {query && (
+            <div className="ml-auto shrink-0">
+              <ArchiveButton
+                query={query}
+                result={{
+                  url: result.url,
+                  title: result.title,
+                  content: result.content,
+                }}
+              />
+            </div>
+          )}
+        </div>
 
       </div>
     </article>
