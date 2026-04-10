@@ -1,3 +1,5 @@
+"use client";
+
 export interface SearXNGResult {
   url: string;
   title: string;
