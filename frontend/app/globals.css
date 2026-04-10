@@ -1,0 +1,228 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark;
+}
+
+/* ── Global resets ──────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+:root {
+  /* Neutral palette */
+  --sx-bg: #fafafa;
+  --sx-surface: #ffffff;
+  --sx-border: #e4e4e7;
+  --sx-text: #18181b;
+  --sx-muted: #71717a;
+  --sx-accent: #2563eb;
+  --sx-accent-hover: #1d4ed8;
+  --sx-visited: #7c3aed;
+
+  /* Spacing */
+  --sx-radius: 10px;
+  --sx-radius-pill: 9999px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sx-bg: #09090b;
+    --sx-surface: #18181b;
+    --sx-border: #27272a;
+    --sx-text: #fafafa;
+    --sx-muted: #a1a1aa;
+    --sx-accent: #60a5fa;
+    --sx-accent-hover: #93c5fd;
+    --sx-visited: #c4b5fd;
+  }
+}
+
+html {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--sx-bg);
+  color: var(--sx-text);
+  min-height: 100dvh;
+  line-height: 1.6;
+}
+
+/* ── Typography helpers ─────────────────────────────────── */
+.text-muted  { color: var(--sx-muted); }
+.text-accent { color: var(--sx-accent); }
+
+/* ── Search bar ─────────────────────────────────────────── */
+.sx-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1.5px solid var(--sx-border);
+  border-radius: var(--sx-radius-pill);
+  background: var(--sx-surface);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sx-input-wrap:focus-within {
+  border-color: var(--sx-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sx-accent) 18%, transparent);
+}
+
+.sx-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--sx-text);
+  font-family: inherit;
+  font-size: 0.975rem;
+  padding: 0.65rem 1.1rem;
+}
+
+.sx-input::placeholder { color: var(--sx-muted); }
+
+.sx-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1.1rem;
+  background: var(--sx-accent);
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  border-radius: 0 9999px 9999px 0;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.sx-search-btn:hover { background: var(--sx-accent-hover); }
+
+/* ── Result card ────────────────────────────────────────── */
+.sx-result {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--sx-border);
+  animation: fadeUp 0.25s ease both;
+}
+
+.sx-result:first-child { border-top: 1px solid var(--sx-border); }
+
+.sx-result-url {
+  font-size: 0.78rem;
+  color: var(--sx-muted);
+  margin-bottom: 0.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sx-result-title {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--sx-accent);
+  text-decoration: none;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sx-result-title:visited { color: var(--sx-visited); }
+.sx-result-title:hover   { text-decoration: underline; }
+
+.sx-result-snippet {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--sx-muted);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Engine badges ──────────────────────────────────────── */
+.sx-engine-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--sx-accent) 10%, transparent);
+  color: var(--sx-accent);
+  border: 1px solid color-mix(in srgb, var(--sx-accent) 25%, transparent);
+}
+
+/* ── Filter chips ───────────────────────────────────────── */
+.sx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1.5px solid var(--sx-border);
+  background: var(--sx-surface);
+  color: var(--sx-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.sx-chip:hover,
+.sx-chip.active {
+  border-color: var(--sx-accent);
+  color: var(--sx-accent);
+  background: color-mix(in srgb, var(--sx-accent) 8%, var(--sx-surface));
+}
+
+/* ── Skeleton loader ────────────────────────────────────── */
+.sx-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--sx-border) 25%,
+    color-mix(in srgb, var(--sx-border) 60%, var(--sx-surface)) 50%,
+    var(--sx-border) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Infobox card ───────────────────────────────────────── */
+.sx-infobox {
+  border: 1.5px solid var(--sx-border);
+  border-radius: var(--sx-radius);
+  padding: 1rem 1.2rem;
+  background: var(--sx-surface);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--sx-border); border-radius: 3px; }
