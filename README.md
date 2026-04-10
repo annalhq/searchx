@@ -1,112 +1,65 @@
-# SearchX — Verifiable Search Trail
+# SearchX, Verifiable Search Trail
 
-> Every query is hashed, chained, and anchored to Base Sepolia (Ethereum L2). What you searched, when, and what was returned is cryptographically provable.
+> **Search. Verify. Preserve.**  
+> Cryptographically provable search results with immutable anchoring on blockchain.
 
 ---
 
-## Project Structure
+<div align="center">
+  <img src="https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/Ethereum-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white" />
+  <img src="https://img.shields.io/badge/Base-0052FF?style=for-the-badge&logo=coinbase&logoColor=white" />
+  <img src="https://img.shields.io/badge/SearXNG-4A90E2?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+</div>
 
-```
-mini/
-├── contracts/
-│   └── SearchX.sol          # Solidity contract — deploy on Remix
-├── backend/
-│   ├── main.py              # FastAPI app (search / click / ledger routes)
-│   ├── models.py            # SQLAlchemy Block ORM model
-│   ├── database.py          # SQLite engine + session
-│   ├── hashing.py           # SHA-256 utilities + drift calculation
-│   ├── blockchain.py        # Async Base Sepolia anchoring via web3.py
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   └── .env.example         # → copy to .env and fill in keys
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── api.js
-│   │   ├── components/
-│   │   │   ├── SearchBar.jsx
-│   │   │   ├── ResultCard.jsx
-│   │   │   ├── DriftIndicator.jsx
-│   │   │   └── LedgerView.jsx
-│   │   └── index.css
-│   └── .env                 # VITE_API_URL=http://localhost:8000
-├── docker-compose.yml       # SearXNG + backend via Docker
-└── README.md
-```
+
+## Overview
+
+**SearchX** is a verifiable search system that transforms traditional search results into **tamper-evident digital records**.
+
+Each query and interaction is:
+- **Hashed (SHA-256)**
+- **Chained with prior results**
+- **Anchored on blockchain**
+
+
+## Key Features
+
+- Verifiable search results  
+- Immutable ledger anchoring  
+- Drift detection  
+- Click-level proofs  
+- Asynchronous blockchain writes  
 
 ---
 
 ## Quick Start
 
-### 1. SearXNG (local search engine)
+### 1. Run SearXNG
+
 ```bash
 docker compose up searxng -d
-# Verify: http://localhost:8080
 ```
+2. Start Backend
 
-### 2. Backend
 ```bash
 cd backend
-cp .env.example .env          # Fill in your keys
+cp .env.example .env
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-### 3. Deploy the Smart Contract
-1. Open `contracts/SearchX.sol` in [Remix IDE](https://remix.ethereum.org).
-2. Compile with Solidity 0.8.20+.
-3. Deploy to **Base Sepolia** (select Injected Provider with MetaMask on Base Sepolia).
-4. Copy the contract address into `backend/.env` as `CONTRACT_ADDRESS`.
+### 3. Deploy Smart Contract
 
-### 4. Frontend
+1. Open `SearchX.sol` in Remix  
+2. Compile using Solidity `0.8.20+`  
+3. Deploy to **Base Sepolia** using MetaMask  
+4. Add contract address to `.env`  
+
+### 4. Run Frontend
+
 ```bash
 cd frontend
 npm install
 npm run dev
-# Open http://localhost:5173
-```
-
----
-
-## Environment Variables (`backend/.env`)
-
-| Variable | Description |
-|---|---|
-| `SEARXNG_URL` | SearXNG JSON API base URL (default: `http://localhost:8080`) |
-| `ALCHEMY_RPC_URL` | Alchemy Base Sepolia RPC endpoint |
-| `WALLET_ADDRESS` | 0x address of the wallet signing transactions |
-| `WALLET_PRIVATE_KEY` | Private key of the signing wallet (never commit!) |
-| `CONTRACT_ADDRESS` | Deployed `SearchX.sol` address on Base Sepolia |
-
----
-
-## How It Works
-
-```
-User types query
-    │
-    ▼
-Backend: SearXNG fetch → SHA-256 hash (prev_hash + payload)
-    │
-    ├── SQLite: Save Block (search)
-    ├── Drift check: compare URLs with last anchored run
-    └── Background: web3.py → Base Sepolia storeHash()
-    │
-    ▼
-Frontend: show results + DriftIndicator + LedgerView
-    │
-User clicks link (opens in new tab)
-    │
-    ▼
-Backend: fetch URL snapshot → hash → Save Click Block
-    └── Background: web3.py → Base Sepolia storeHash()
-```
-
----
-
-## Blockchain
-
-- **Network**: Base Sepolia (Ethereum L2 testnet)
-- **Explorer**: https://sepolia.basescan.org
-- **Contract**: `SearchX.sol` — minimal hash registry
-- On-chain operations are **asynchronous** (background tasks) — the UI shows "Pending…" until confirmed.
