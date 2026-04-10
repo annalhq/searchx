@@ -3,14 +3,11 @@
 use_default_settings: true
 
 server:
-  # Secret key for sessions
-  secret_key: "searchx_secret_key_change_me"
-  # Support JSON format for our API
+  secret_key: "370e48a5135cdf22a29ca63fb7c54b6eef1c1270782fcb06512c15a675b22349"
+search:
   formats:
     - html
     - json
-
-search:
   # Safe search 0: off, 1: moderate, 2: strict
   safe_search: 0
   # List of engines to use

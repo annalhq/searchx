@@ -74,7 +74,7 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer
+      {/* <footer
         style={{
           position: "absolute",
           bottom: "1.25rem",
@@ -83,17 +83,8 @@ export default function HomePage() {
           textAlign: "center",
         }}
       >
-        Powered by{" "}
-        <a
-          href="https://searxng.org"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "var(--sx-accent)", textDecoration: "none" }}
-        >
-          SearXNG
-        </a>{" "}
-        · No cookies · No ads
-      </footer>
+        
+      </footer> */}
     </div>
   );
 }
