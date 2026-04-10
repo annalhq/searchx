@@ -1,71 +1,102 @@
-# SearchX, Verifiable Search Trail
-
-> **Search. Verify. Preserve.**  
-> Cryptographically provable search results with immutable anchoring on blockchain.
-
----
+# SearchX
 
 <div align="center">
-  <img src="https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
-  <img src="https://img.shields.io/badge/Ethereum-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white" />
-  <img src="https://img.shields.io/badge/Base-0052FF?style=for-the-badge&logo=coinbase&logoColor=white" />
-  <img src="https://img.shields.io/badge/SearXNG-4A90E2?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
-</div>
 
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
+![Solidity](https://img.shields.io/badge/Solidity_0.8-363636?style=for-the-badge&logo=solidity&logoColor=white)
+![Hardhat](https://img.shields.io/badge/Hardhat-FFF100?style=for-the-badge&logo=hardhat&logoColor=black)
+![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
+![IPFS](https://img.shields.io/badge/IPFS-65C2CB?style=for-the-badge&logo=ipfs&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![SearXNG](https://img.shields.io/badge/SearXNG-4A90E2?style=for-the-badge)
+
+</div>
 
 ## Overview
 
-**SearchX** is a verifiable search system that transforms traditional search results into **tamper-evident digital records**.
+SearchX is a verifiable search system that anchors search queries and click interactions to an immutable ledger. Each search result set is SHA-256 hashed, structured into a Merkle tree, pinned to IPFS, and recorded on-chain via a Solidity smart contract. A private Rust-based chain (3-node cluster) independently validates and stores block submissions with peer-to-peer propagation. The frontend proxies queries through SearXNG for privacy-preserving, multi-engine search aggregation.
 
-Each query and interaction is:
-- **Hashed (SHA-256)**
-- **Chained with prior results**
-- **Anchored on blockchain**
+## Tech Stack
 
+- **Frontend** -- Next.js 16, React 19, Tailwind CSS 4, DaisyUI 5, TypeScript
+- **Backend** -- Node.js, Express, ethers.js 6, merkletreejs, axios
+- **Search Engine** -- SearXNG (Dockerized, JSON API)
+- **Smart Contract** -- Solidity 0.8.24, Hardhat (local network)
+- **Private Chain** -- Rust (Axum, Tokio, SHA-2), 3-node Docker cluster
+- **Storage** -- IPFS (local daemon, HTTP API)
+- **Orchestration** -- Docker Compose
 
-## Key Features
+## How It Works
 
-- Verifiable search results  
-- Immutable ledger anchoring  
-- Drift detection  
-- Click-level proofs  
-- Asynchronous blockchain writes  
+1. User submits a query through the Next.js frontend.
+2. The frontend proxies the request to SearXNG via server-side rewrite, aggregating results from Google, DuckDuckGo, and Wikipedia.
+3. When a result is archived, the Node.js backend computes a SHA-256 hash of the payload and builds a Merkle tree over the result set.
+4. The content snapshot is pinned to IPFS; the CID, Merkle root, and data hash are submitted to the `SearchX` smart contract on-chain.
+5. The same block is submitted to the private Rust chain cluster, where each node independently re-hashes the payload to verify integrity before appending to its local ledger.
+6. Peer nodes propagate accepted blocks across the cluster.
+7. Any record can be verified by re-deriving the hash and comparing it against both the on-chain record and the private chain state.
 
----
+## Environment Variables
 
-## Quick Start
+### Node.js Backend (`node-backend/.env`)
 
-### 1. Run SearXNG
+```env
+SEARXNG_URL=http://localhost:8080
+RPC_URL=http://127.0.0.1:8545
+PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+CONTRACT_ADDRESS=
+IPFS_API_URL=http://127.0.0.1:5001
+PORT=3001
+```
+
+### Frontend (`frontend/.env.local`)
+
+```env
+SEARXNG_INTERNAL_URL=http://localhost:8080
+```
+
+## Setup & Run Commands
+
+### SearXNG
 
 ```bash
 docker compose up searxng -d
 ```
-2. Start Backend
+
+### Smart Contract
 
 ```bash
-cd backend
-cp .env.example .env
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+cd blockchain
+npm install
+npx hardhat node
+npx hardhat run scripts/deploy.js --network localhost
 ```
 
-### 3. Deploy Smart Contract
+Copy the deployed contract address into `node-backend/.env` as `CONTRACT_ADDRESS`.
 
-1. Open `SearchX.sol` in Remix  
-2. Compile using Solidity `0.8.20+`  
-3. Deploy to **Base Sepolia** using MetaMask  
-4. Add contract address to `.env`  
+### IPFS
 
-### 4. Run the Private Rust Chain
+```bash
+ipfs daemon
+```
+
+### Node.js Backend
+
+```bash
+cd node-backend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+### Private Rust Chain
 
 ```bash
 docker compose up rust-node-1 rust-node-2 rust-node-3 -d
 ```
 
-The nodes expose `POST /verify` to validate a SearchX block and `POST /blocks` to append a verified block to the private ledger.
-
-### 5. Run Frontend
+### Frontend
 
 ```bash
 cd frontend
@@ -74,8 +105,42 @@ npm install
 npm run dev
 ```
 
-If frontend runs inside Docker, set:
+## Smart Contract
+
+`contracts/SearchX.sol` -- Deployed via Hardhat to a local Ethereum node.
+
+| Function | Description |
+|---|---|
+| `storeHash(dataHash, blockType)` | Stores a SHA-256 hash with a type label (`search` or `click`). Returns the record ID. |
+| `getRecord(recordId)` | Returns `dataHash`, `blockType`, `timestamp`, and `submitter` for a given record. |
+
+### Hardhat Commands
 
 ```bash
-SEARXNG_INTERNAL_URL=http://searxng:8080
+npx hardhat compile
+npx hardhat test
+npx hardhat node
+npx hardhat run scripts/deploy.js --network localhost
 ```
+
+## Private Chain API
+
+Each Rust node exposes the following endpoints (default ports: `9000`, `9001`, `9002`):
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | GET | Node status, chain height, head hash |
+| `/chain` | GET | Full chain snapshot (all blocks) |
+| `/verify` | POST | Validate a block submission without appending |
+| `/blocks` | POST | Verify and append a block; propagate to peers |
+| `/peers` | GET/POST | List or add peer nodes |
+
+## Key Guarantees
+
+- Every search and click event is SHA-256 hashed before leaving the backend.
+- Merkle trees are constructed over result sets; only the root is stored on-chain.
+- On-chain records are append-only and keyed by sequential ID.
+- The private Rust chain independently re-derives hashes to reject tampered submissions.
+- Block propagation across the 3-node cluster ensures no single point of failure.
+- SearXNG proxying prevents direct user-to-engine contact, preserving query privacy.
+- IPFS pinning produces content-addressed snapshots; the CID is stored alongside the on-chain hash for independent verification.
