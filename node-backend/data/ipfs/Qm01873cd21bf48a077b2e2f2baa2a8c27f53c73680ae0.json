@@ -1,0 +1,15 @@
+{
+  "query": "new york",
+  "archivedAt": "2026-04-11T05:15:15.481Z",
+  "merkleRoot": "0xf212e947e53f798873ed1bed2b9eb9c2675d5879e808f1365e28d98710770f67",
+  "results": [
+    {
+      "url": "https://en.wikipedia.org/wiki/New_York_City",
+      "title": "New York City - Wikipedia",
+      "snippet": "New York, often called New York City (NYC), [b] is the most populous city in the United States. It is located at the southern tip of New York State on New York Harbor, one of the world's largest natural harbors. The city comprises five boroughs, each coextensive with its respective county. It is the geographical and demographic center of both the Northeast megalopolis and the New York ...",
+      "pageHTML": "",
+      "contentHash": "f212e947e53f798873ed1bed2b9eb9c2675d5879e808f1365e28d98710770f67",
+      "fetchedAt": "2026-04-11T05:15:15.481Z"
+    }
+  ]
+}

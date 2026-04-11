@@ -1,0 +1,15 @@
+{
+  "query": "fff",
+  "archivedAt": "2026-04-11T05:10:46.108Z",
+  "merkleRoot": "0xe5cd20d1aaf9c0a161f69bd35b98ce7075ba640dfb45d05d198bdaafe2f6ecac",
+  "results": [
+    {
+      "url": "https://www.fffenterprises.com/",
+      "title": "FFF Enterprises: Flu Vaccine - Critical-care Pharmaceutical Product Distribution",
+      "snippet": "ODRescue™, a program dedicated to expanding on-demand access to life-saving products and sponsored by FFF Enterprises, Inc.— the nation’s most trusted specialty drug distributor and diversified healthcare company — today announced the launch of \"Locate Naloxone Now\"…",
+      "pageHTML": "",
+      "contentHash": "e5cd20d1aaf9c0a161f69bd35b98ce7075ba640dfb45d05d198bdaafe2f6ecac",
+      "fetchedAt": "2026-04-11T05:10:46.106Z"
+    }
+  ]
+}

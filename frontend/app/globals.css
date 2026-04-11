@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 @plugin "daisyui" {
   themes: light --default, dark --prefersdark;
 }
@@ -39,6 +40,7 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -49,6 +51,7 @@ body {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -58,6 +61,7 @@ body {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -68,6 +72,7 @@ body {
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -75,10 +80,12 @@ body {
 }
 
 @keyframes pulse-soft {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -94,12 +101,10 @@ body {
 }
 
 @utility animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    oklch(0.87 0 0 / 0.4) 25%,
-    oklch(0.92 0 0 / 0.6) 50%,
-    oklch(0.87 0 0 / 0.4) 75%
-  );
+  background: linear-gradient(90deg,
+      oklch(0.87 0 0 / 0.4) 25%,
+      oklch(0.92 0 0 / 0.6) 50%,
+      oklch(0.87 0 0 / 0.4) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -113,13 +118,16 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: oklch(0.7 0 0 / 0.3);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.6 0 0 / 0.5);
 }

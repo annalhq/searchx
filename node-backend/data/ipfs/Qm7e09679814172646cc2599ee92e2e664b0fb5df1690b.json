@@ -1,0 +1,15 @@
+{
+  "query": "test",
+  "archivedAt": "2026-04-11T05:13:39.379Z",
+  "merkleRoot": "0xeb64f4327507e2949d0f7c944deac8134a4b18b2aa0b3a12d3f5dbbed3cacd10",
+  "results": [
+    {
+      "url": "https://www.speedtest.net/",
+      "title": "Speedtest by Ookla - The Global Broadband Speed Test",
+      "snippet": "Speedtest is better with the app. Download the Speedtest app for more metrics, video testing, mobile coverage maps, and more. Get it on Google Play.",
+      "pageHTML": "",
+      "contentHash": "eb64f4327507e2949d0f7c944deac8134a4b18b2aa0b3a12d3f5dbbed3cacd10",
+      "fetchedAt": "2026-04-11T05:13:39.378Z"
+    }
+  ]
+}
