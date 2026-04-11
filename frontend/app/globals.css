@@ -125,9 +125,16 @@ body {
 }
 
 /* ── Focus ring override for accessibility ──────────────── */
-:focus-visible {
+:focus-visible:not(input, textarea, select, button) {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: none;
 }
 
 /* ── Visited link styling ───────────────────────────────── */
