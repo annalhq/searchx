@@ -1,0 +1,15 @@
+{
+  "query": "amravati",
+  "archivedAt": "2026-04-10T21:51:04.094Z",
+  "merkleRoot": "0xed0f72bda67a1e3bbcac48cf94a63d880d464100109b4dcf0c3093aa95a27d88",
+  "results": [
+    {
+      "url": "https://www.incredibleindia.gov.in/en/maharashtra/amravati",
+      "title": "Amravati: City of Golden Light in Maharashtra - Incredible India",
+      "snippet": "Hidden in the heart of Maharashtra lies Amravati, which has a rich history, vibrant culture, delicious cuisine, and stunning game sanctuaries nearby.",
+      "pageHTML": "",
+      "contentHash": "ed0f72bda67a1e3bbcac48cf94a63d880d464100109b4dcf0c3093aa95a27d88",
+      "fetchedAt": "2026-04-10T21:51:04.090Z"
+    }
+  ]
+}
