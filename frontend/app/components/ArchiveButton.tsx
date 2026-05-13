@@ -9,8 +9,19 @@ import {
   ExternalLink,
   Copy,
   Check,
-  X,
+  Camera,
+  Globe,
+  Archive,
 } from "lucide-react";
+
+interface SnapshotInfo {
+  url: string;
+  title: string;
+  screenshotCID: string;
+  screenshotGatewayUrl: string;
+  htmlCID: string;
+  htmlGatewayUrl: string;
+}
 
 interface ArchiveResult {
   proofId: number;
@@ -20,7 +31,9 @@ interface ArchiveResult {
   queryHash: string;
   merkleRoot: string;
   ipfsCID: string;
+  masterGatewayUrl?: string;
   timestamp: number;
+  snapshots?: SnapshotInfo[];
 }
 
 interface ArchiveButtonProps {
@@ -106,6 +119,9 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
     setTimeout(() => setCopied(""), 2000);
   }
 
+  // The first result's snapshot (we archive one at a time via this button)
+  const snapshot = archived?.snapshots?.[0];
+
   const detailRows = archived
     ? [
         {
@@ -139,7 +155,7 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
           mono: true,
         },
         {
-          label: "Content CID",
+          label: "Master CID",
           value: archived.ipfsCID,
           key: "cid",
           mono: true,
@@ -172,7 +188,7 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
 
               {/* Proof details card */}
               <div
-                className="fixed z-[9999] w-[340px] bg-base-100 border border-base-300 rounded-xl p-5 animate-fadeUp"
+                className="fixed z-[9999] w-[360px] bg-base-100 border border-base-300 rounded-xl p-5 animate-fadeUp"
                 style={{
                   top: `${cardPos.top}px`,
                   right: `${cardPos.right}px`,
@@ -180,15 +196,6 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
                     "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)",
                 }}
               >
-                {/* Close button */}
-                <button
-                  onClick={() => setShowDetails(false)}
-                  className="absolute top-3 right-3 btn btn-ghost btn-xs btn-circle"
-                  aria-label="Close"
-                >
-                  <X size={14} />
-                </button>
-
                 {/* Header */}
                 <div className="flex items-center gap-2 text-success text-sm font-semibold mb-3 pb-2.5 border-b border-base-300">
                   <ShieldCheck size={14} />
@@ -197,6 +204,25 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
                     CONFIRMED
                   </span>
                 </div>
+
+                {/* Screenshot preview */}
+                {snapshot?.screenshotGatewayUrl && (
+                  <div className="mb-3 rounded-lg overflow-hidden border border-base-300">
+                    <img
+                      src={snapshot.screenshotGatewayUrl}
+                      alt="Website snapshot"
+                      className="w-full h-28 object-cover object-top"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                    <div className="px-2 py-1 bg-base-200 flex items-center gap-1 text-[0.6rem] text-base-content/50">
+                      <Camera size={9} />
+                      <span>Snapshot captured</span>
+                      <span className="ml-auto truncate max-w-[140px]">{snapshot.title}</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Details grid */}
                 <div className="space-y-2.5">
@@ -236,15 +262,30 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
                   ))}
                 </div>
 
-                {/* Verify link */}
-                <a
-                  href={`/verify?id=${archived.proofId}`}
-                  className="btn btn-primary btn-sm w-full mt-4 gap-1.5 rounded-lg"
-                >
-                  <ShieldCheck size={12} />
-                  <span>Verify This Proof</span>
-                  <ExternalLink size={10} />
-                </a>
+                {/* Action buttons */}
+                <div className="flex flex-col gap-2 mt-4">
+                  {/* View archived website */}
+                  <a
+                    href={`/archive/${encodeURIComponent(archived.ipfsCID)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-accent btn-sm w-full gap-1.5 rounded-lg"
+                  >
+                    <Globe size={12} />
+                    <span>View Archived Site</span>
+                    <ExternalLink size={10} />
+                  </a>
+
+                  {/* Verify proof */}
+                  <a
+                    href={`/verify?id=${archived.proofId}`}
+                    className="btn btn-primary btn-sm w-full gap-1.5 rounded-lg"
+                  >
+                    <ShieldCheck size={12} />
+                    <span>Verify This Proof</span>
+                    <ExternalLink size={10} />
+                  </a>
+                </div>
               </div>
             </>,
             document.body
@@ -259,12 +300,12 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
         onClick={handleArchive}
         disabled={loading}
         className="btn btn-xs btn-outline btn-neutral gap-1 rounded-full transition-all duration-150"
-        title="Archive this result to blockchain"
+        title="Archive this result to blockchain + IPFS"
       >
         {loading ? (
           <Loader2 size={12} className="animate-spin" />
         ) : (
-          <Shield size={12} />
+          <Archive size={12} />
         )}
         <span>{loading ? "Archiving…" : "Archive"}</span>
       </button>
@@ -273,4 +314,3 @@ export default function ArchiveButton({ query, result }: ArchiveButtonProps) {
     </div>
   );
 }
-

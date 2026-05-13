@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SearchX — Privacy-respecting search",
+  title: "SearchX, Deccentralized search",
   description:
     "A minimalist, privacy-first search engine powered by SearXNG. No tracking, no profiling.",
   keywords: ["search engine", "privacy", "searxng", "searchx"],

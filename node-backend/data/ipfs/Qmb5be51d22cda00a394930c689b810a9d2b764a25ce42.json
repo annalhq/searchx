@@ -1,0 +1,15 @@
+{
+  "query": "news",
+  "archivedAt": "2026-04-11T08:09:10.068Z",
+  "merkleRoot": "0xf386cace737921ae036fc91da22ab53e44f50a04056419a46dbd3c9bdb7891d4",
+  "results": [
+    {
+      "url": "https://www.aljazeera.com/news/",
+      "title": "News | Today's latest from Al Jazeera",
+      "snippet": "3 hours ago · News · Real Madrid hand Barcelona huge La Liga title chance after draw with Girona · Democrat Kamala Harris teases 2028 presidential bid, following Trump loss.",
+      "pageHTML": "",
+      "contentHash": "f386cace737921ae036fc91da22ab53e44f50a04056419a46dbd3c9bdb7891d4",
+      "fetchedAt": "2026-04-11T08:09:10.068Z"
+    }
+  ]
+}

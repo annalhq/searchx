@@ -1,0 +1,15 @@
+{
+  "query": "new york times news",
+  "archivedAt": "2026-04-11T05:54:35.863Z",
+  "merkleRoot": "0x31e05c91fe4b129f7e14b9b9bd0b57211135b7801bbc07bdc115bd7cefa50840",
+  "results": [
+    {
+      "url": "https://www.wnd.com/2026/03/completely-fabricated-n-y-times-forced-issue-several/",
+      "title": "'Completely FABRICATED': N.Y. Times forced to issue several corrections after Trump official exposes deception * WorldNetDaily * by Nicole Silverio, Daily Caller News Foundation",
+      "snippet": "The New York Times issued two corrections on Monday after Under Secretary of State Jacob Helberg called them over its coverage of President Donald Trump’s administration’s investor consortium. Helberg called out the Times on Saturday for adding “completely fabricated quotes” in its article, “Trump Sets ‘Pax Silica’ Fund to Reduce Global Dependencies,” which covered the administration’s plan to collectively invest in energy products, minerals and semiconductors. The Times issued at least three corrections after misquoting Helberg several times. Get the hottest, most important news stories on the Internet – delivered FREE to your inbox as soon as they break! Take just 30 seconds and sign up for WND's Email News Alerts! “The @NYTimes completely FABRICATED quotes that never happened. We submitted corrections (multiple times). They ignored them.",
+      "pageHTML": "",
+      "contentHash": "31e05c91fe4b129f7e14b9b9bd0b57211135b7801bbc07bdc115bd7cefa50840",
+      "fetchedAt": "2026-04-11T05:54:35.862Z"
+    }
+  ]
+}

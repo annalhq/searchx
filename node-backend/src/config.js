@@ -44,4 +44,6 @@ module.exports = {
   CONTRACT_ADDRESS: contractAddress,
   CONTRACT_ABI: contractABI,
   IPFS_API_URL: process.env.IPFS_API_URL || "http://127.0.0.1:5001",
+  IPFS_GATEWAY_URL: process.env.IPFS_GATEWAY_URL || "http://127.0.0.1:8081",
+  USE_REAL_IPFS: process.env.USE_REAL_IPFS === "true",
 };

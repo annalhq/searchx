@@ -1,0 +1,15 @@
+{
+  "query": "new york",
+  "archivedAt": "2026-05-13T08:27:11.902Z",
+  "merkleRoot": "0xf6e4841da97a0785eea8faddb229206bb8c37bfae1dafb18880d39ec98cfb8ea",
+  "results": [
+    {
+      "url": "https://www.nycinsiderguide.com/new-york-city-tourist-map/",
+      "title": "New York City Tourist Map | Free Print Guide, Attractions ...",
+      "snippet": "Apr 22, 2025 · FREE New York City Tourist Map, Map of Manhattan NY, NYC Subway Maps with all the Popular Attractions. Download and print them right now!",
+      "pageHTML": "",
+      "contentHash": "f6e4841da97a0785eea8faddb229206bb8c37bfae1dafb18880d39ec98cfb8ea",
+      "fetchedAt": "2026-05-13T08:27:11.901Z"
+    }
+  ]
+}

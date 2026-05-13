@@ -1,0 +1,15 @@
+{
+  "query": "new york times news",
+  "archivedAt": "2026-04-11T05:51:17.014Z",
+  "merkleRoot": "0xfd998d0e5ef86632e81dce03ce856dd7132c6e979e20446ff5f60c3b7ee11f69",
+  "results": [
+    {
+      "url": "https://en.wikipedia.org/wiki/The_New_York_Times",
+      "title": "The New York Times - Wikipedia",
+      "snippet": "The New York Times (NYT) is a newspaper based in Manhattan, New York City. The New York Times covers domestic, national, and international news, and publishes opinion pieces and reviews. As one of the longest-running newspapers in the United States, the Times serves as one of the country's ...",
+      "pageHTML": "",
+      "contentHash": "fd998d0e5ef86632e81dce03ce856dd7132c6e979e20446ff5f60c3b7ee11f69",
+      "fetchedAt": "2026-04-11T05:51:17.008Z"
+    }
+  ]
+}

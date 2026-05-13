@@ -1,86 +1,193 @@
 /**
- * ipfs.js — Local content-addressable storage service.
+ * ipfs.js — Content-addressable storage service.
  *
- * Simulates IPFS by storing content as JSON files keyed by their
- * SHA-256 hash (acting as a CID). This avoids requiring an external
- * IPFS daemon for local development while preserving the same
- * content-addressable semantics.
+ * Supports two modes controlled by USE_REAL_IPFS env var:
  *
- * Files are stored in: node-backend/data/ipfs/{hash}.json
+ * MODE 1 — Real IPFS (USE_REAL_IPFS=true):
+ *   Connects to your local IPFS Desktop daemon via the HTTP API at
+ *   IPFS_API_URL (default: http://127.0.0.1:5001).
+ *   Files are pinned and accessible via the local gateway at
+ *   IPFS_GATEWAY_URL (default: http://127.0.0.1:8081).
+ *
+ * MODE 2 — Local filesystem (USE_REAL_IPFS=false, default):
+ *   Simulates IPFS by storing JSON files keyed by SHA-256 hash.
+ *   Files are stored in: node-backend/data/ipfs/{cid}.json
  */
 
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
+const FormData = require("form-data");
 const { sha256 } = require("./hasher");
+const config = require("../config");
 
 const STORAGE_DIR = path.join(__dirname, "..", "..", "data", "ipfs");
+const SCREENSHOTS_DIR = path.join(__dirname, "..", "..", "data", "screenshots");
 
-/**
- * Initialise the local storage directory.
- */
-async function initIPFS() {
-  try {
-    fs.mkdirSync(STORAGE_DIR, { recursive: true });
-    const files = fs.readdirSync(STORAGE_DIR).filter((f) => f.endsWith(".json"));
-    console.log(`✅ Local content store ready: ${STORAGE_DIR}`);
-    console.log(`   ${files.length} existing archive(s) found`);
-  } catch (err) {
-    console.error(`❌ Failed to initialise local content store: ${err.message}`);
-    throw err;
-  }
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Ensure storage directories exist */
+function ensureDirs() {
+  fs.mkdirSync(STORAGE_DIR, { recursive: true });
+  fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 }
 
+// ── Real IPFS via HTTP API ────────────────────────────────────────────────────
+
 /**
- * Upload content to local storage and return a deterministic CID.
- *
- * The CID is the SHA-256 hash of the JSON-serialised content,
- * prefixed with "Qm" to visually resemble an IPFS CID.
- *
- * @param {object} content - JSON-serialisable content to store
- * @returns {Promise<string>} Content identifier (CID)
+ * Upload a Buffer or string to IPFS daemon via /api/v0/add.
+ * @param {Buffer|string} data
+ * @param {string} filename
+ * @returns {Promise<string>} CID
  */
-async function uploadToIPFS(content) {
-  const jsonStr = JSON.stringify(content, null, 2);
+async function addToIPFSDaemon(data, filename = "file") {
+  const form = new FormData();
+  const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, "utf8");
+  form.append("file", buffer, { filename });
+
+  const resp = await axios.post(
+    `${config.IPFS_API_URL}/api/v0/add?pin=true`,
+    form,
+    {
+      headers: form.getHeaders(),
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      timeout: 60000,
+    }
+  );
+
+  const cid = resp.data.Hash;
+  console.log(`📌 IPFS add: ${filename} → ${cid}`);
+  return cid;
+}
+
+// ── Local filesystem fallback ─────────────────────────────────────────────────
+
+function localUpload(content, filename) {
+  ensureDirs();
+  const jsonStr =
+    typeof content === "string" ? content : JSON.stringify(content, null, 2);
   const hash = sha256(jsonStr);
   const cid = `Qm${hash.substring(0, 44)}`;
-
   const filePath = path.join(STORAGE_DIR, `${cid}.json`);
+  fs.writeFileSync(filePath, jsonStr, "utf8");
+  console.log(`📌 Local store: ${cid} (${jsonStr.length} bytes)`);
+  return cid;
+}
 
-  try {
-    fs.writeFileSync(filePath, jsonStr, "utf8");
-    console.log(`📌 Local store: ${cid} (${jsonStr.length} bytes)`);
-    return cid;
-  } catch (err) {
-    console.error(`❌ Local store write failed: ${err.message}`);
-    throw new Error(`Content storage failed: ${err.message}`);
+function localGet(cid) {
+  const filePath = path.join(STORAGE_DIR, `${cid}.json`);
+  if (!fs.existsSync(filePath)) return null;
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+/**
+ * Upload a JSON object to storage and return its CID.
+ */
+async function uploadToIPFS(content) {
+  if (config.USE_REAL_IPFS) {
+    const jsonStr = JSON.stringify(content, null, 2);
+    return await addToIPFSDaemon(Buffer.from(jsonStr, "utf8"), "archive.json");
   }
+  return localUpload(content);
 }
 
 /**
- * Retrieve content from local storage by CID.
- * @param {string} cid - Content identifier
- * @returns {Promise<object|null>} Parsed JSON content, or null on failure
+ * Upload raw text (e.g. full HTML) to storage and return its CID.
+ */
+async function uploadTextToIPFS(text, filename = "page.html") {
+  if (config.USE_REAL_IPFS) {
+    return await addToIPFSDaemon(Buffer.from(text, "utf8"), filename);
+  }
+  ensureDirs();
+  const hash = sha256(text);
+  const cid = `Qm${hash.substring(0, 44)}`;
+  fs.writeFileSync(path.join(STORAGE_DIR, `${cid}_html.txt`), text, "utf8");
+  return cid;
+}
+
+/**
+ * Upload a base64-encoded PNG screenshot to storage and return its CID.
+ */
+async function uploadScreenshotToIPFS(base64png, url) {
+  if (!base64png) return "";
+
+  const buffer = Buffer.from(base64png, "base64");
+
+  if (config.USE_REAL_IPFS) {
+    return await addToIPFSDaemon(buffer, "screenshot.png");
+  }
+
+  // Local fallback — save to screenshots directory
+  ensureDirs();
+  const hash = sha256(base64png.substring(0, 1000));
+  const cid = `Qmss${hash.substring(0, 40)}`;
+  const filePath = path.join(SCREENSHOTS_DIR, `${cid}.png`);
+  fs.writeFileSync(filePath, buffer);
+  console.log(`📸 Screenshot saved locally: ${cid}.png`);
+  return cid;
+}
+
+/**
+ * Retrieve content from storage by CID.
+ * @param {string} cid
+ * @returns {Promise<object|null>}
  */
 async function getFromIPFS(cid) {
-  const filePath = path.join(STORAGE_DIR, `${cid}.json`);
-
-  try {
-    if (!fs.existsSync(filePath)) {
-      console.warn(`⚠️  Content not found for CID: ${cid}`);
+  if (config.USE_REAL_IPFS) {
+    try {
+      const resp = await axios.post(
+        `${config.IPFS_API_URL}/api/v0/cat?arg=${cid}`,
+        null,
+        { timeout: 30000, responseType: "text" }
+      );
+      return JSON.parse(resp.data);
+    } catch (err) {
+      console.warn(`⚠️  IPFS cat failed for ${cid}: ${err.message}`);
       return null;
     }
+  }
+  return localGet(cid);
+}
 
-    const data = fs.readFileSync(filePath, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    console.error(`❌ Content retrieval failed for ${cid}: ${err.message}`);
-    return null;
+/**
+ * Get the public gateway URL for a CID.
+ */
+function getGatewayUrl(cid) {
+  if (!cid) return "";
+  if (config.USE_REAL_IPFS) {
+    return `${config.IPFS_GATEWAY_URL}/ipfs/${cid}`;
+  }
+  // Point to our own backend endpoint
+  return `/api/archive/content/${cid}`;
+}
+
+/**
+ * Initialise storage directories.
+ */
+async function initIPFS() {
+  ensureDirs();
+  const files = fs.readdirSync(STORAGE_DIR).filter((f) => f.endsWith(".json"));
+  if (config.USE_REAL_IPFS) {
+    console.log(`✅ IPFS mode: Real IPFS Desktop at ${config.IPFS_API_URL}`);
+    console.log(`   Gateway: ${config.IPFS_GATEWAY_URL}`);
+    // Quick connectivity check
+    try {
+      await axios.post(`${config.IPFS_API_URL}/api/v0/id`, null, { timeout: 5000 });
+      console.log(`   ✅ IPFS daemon reachable`);
+    } catch (e) {
+      console.warn(`   ⚠️  IPFS daemon not reachable — check that IPFS Desktop is running`);
+    }
+  } else {
+    console.log(`✅ Local content store ready: ${STORAGE_DIR}`);
+    console.log(`   ${files.length} existing archive(s) found`);
   }
 }
 
 /**
- * List all stored CIDs.
- * @returns {string[]} Array of CID strings
+ * List all stored CIDs (local mode only).
  */
 function listAllCIDs() {
   try {
@@ -93,4 +200,14 @@ function listAllCIDs() {
   }
 }
 
-module.exports = { initIPFS, uploadToIPFS, getFromIPFS, listAllCIDs };
+module.exports = {
+  initIPFS,
+  uploadToIPFS,
+  uploadTextToIPFS,
+  uploadScreenshotToIPFS,
+  getFromIPFS,
+  getGatewayUrl,
+  listAllCIDs,
+  SCREENSHOTS_DIR,
+  STORAGE_DIR,
+};

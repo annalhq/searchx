@@ -19,16 +19,18 @@ const searchRouter = require("./routes/search");
 const archiveRouter = require("./routes/archive");
 const verifyRouter = require("./routes/verify");
 const recordsRouter = require("./routes/records");
+const viewRouter = require("./routes/view");
 
 const app = express();
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors({ origin: "*" }));
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "50mb" }));
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use("/api/search", searchRouter);
 app.use("/api/archive", archiveRouter);
+app.use("/api/archive", viewRouter);
 app.use("/api/verify", verifyRouter);
 app.use("/api/records", recordsRouter);
 

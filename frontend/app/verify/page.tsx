@@ -376,7 +376,7 @@ function VerifyDashboard() {
         {connected && (
           <div className="bg-base-100 rounded-xl border border-base-300 p-3 mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
             <div className="flex items-center gap-1.5 font-semibold text-primary">
-              <Activity size={13} /> Hardhat Local Testnet
+              <Activity size={13} /> Hardhat Mainnet
             </div>
             <div className="flex items-center gap-1 text-base-content/50">
               <Link2 size={11} /> RPC: {status?.blockchain?.rpcUrl}
