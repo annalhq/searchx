@@ -9,6 +9,14 @@
  */
 
 const express = require("express");
+
+process.on("uncaughtException", (err) => {
+  console.error("\n[uncaughtException] — server kept alive:", err.message);
+  console.error(err.stack);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("\n[unhandledRejection] — server kept alive:", reason);
+});
 const cors = require("cors");
 const config = require("./config");
 const { initIPFS } = require("./services/ipfs");
