@@ -45,16 +45,35 @@ async function addToIPFSDaemon(data, filename = "file") {
   const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, "utf8");
   form.append("file", buffer, { filename });
 
-  const resp = await axios.post(
-    `${config.IPFS_API_URL}/api/v0/add?pin=true`,
-    form,
-    {
-      headers: form.getHeaders(),
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      timeout: 60000,
+  let resp;
+  try {
+    resp = await axios.post(
+      `${config.IPFS_API_URL}/api/v0/add?pin=true`,
+      form,
+      {
+        headers: {
+          ...form.getHeaders(),
+          // Suppress Origin so Kubo's CORS guard doesn't block Node.js requests.
+          // Without this, some environments send Origin: null which Kubo rejects with 403.
+          Origin: undefined,
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        timeout: 60000,
+      }
+    );
+  } catch (err) {
+    if (err.response?.status === 403) {
+      throw new Error(
+        `IPFS daemon returned 403 Forbidden. ` +
+        `Fix: open IPFS Desktop → Settings → IPFS Config and ensure ` +
+        `API.HTTPHeaders.Access-Control-Allow-Origin includes "*" or "http://localhost:3001", ` +
+        `then restart IPFS Desktop. ` +
+        `Or set USE_REAL_IPFS=false in node-backend/.env to use local storage instead.`
+      );
     }
-  );
+    throw err;
+  }
 
   const cid = resp.data.Hash;
   console.log(`📌 IPFS add: ${filename} → ${cid}`);
@@ -141,11 +160,22 @@ async function getFromIPFS(cid) {
       const resp = await axios.post(
         `${config.IPFS_API_URL}/api/v0/cat?arg=${cid}`,
         null,
-        { timeout: 30000, responseType: "text" }
+        {
+          timeout: 30000,
+          responseType: "text",
+          headers: { Origin: undefined },
+        }
       );
       return JSON.parse(resp.data);
     } catch (err) {
-      console.warn(`⚠️  IPFS cat failed for ${cid}: ${err.message}`);
+      if (err.response?.status === 403) {
+        console.warn(
+          `⚠️  IPFS cat 403 Forbidden for ${cid} — ` +
+          `API access not configured. Set USE_REAL_IPFS=false to use local storage.`
+        );
+      } else {
+        console.warn(`⚠️  IPFS cat failed for ${cid}: ${err.message}`);
+      }
       return null;
     }
   }
@@ -175,10 +205,26 @@ async function initIPFS() {
     console.log(`   Gateway: ${config.IPFS_GATEWAY_URL}`);
     // Quick connectivity check
     try {
-      await axios.post(`${config.IPFS_API_URL}/api/v0/id`, null, { timeout: 5000 });
-      console.log(`   ✅ IPFS daemon reachable`);
+      await axios.post(
+        `${config.IPFS_API_URL}/api/v0/id`,
+        null,
+        { timeout: 5000, headers: { Origin: undefined } }
+      );
+      console.log(`   ✅ IPFS daemon reachable and accepting requests`);
     } catch (e) {
-      console.warn(`   ⚠️  IPFS daemon not reachable — check that IPFS Desktop is running`);
+      if (e.response?.status === 403) {
+        console.warn(`   ❌ IPFS daemon returned 403 Forbidden!`);
+        console.warn(`      The API CORS headers are not configured correctly.`);
+        console.warn(`      Run this fix (requires IPFS Desktop restart after):`);
+        console.warn(`        ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]'`);
+        console.warn(`        ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT","POST","GET"]'`);
+        console.warn(`      OR set USE_REAL_IPFS=false in .env to use local file storage instead.`);
+      } else if (e.code === 'ECONNREFUSED') {
+        console.warn(`   ⚠️  IPFS daemon not running — open IPFS Desktop or run: ipfs daemon`);
+        console.warn(`      OR set USE_REAL_IPFS=false in .env to use local file storage instead.`);
+      } else {
+        console.warn(`   ⚠️  IPFS daemon not reachable: ${e.message}`);
+      }
     }
   } else {
     console.log(`✅ Local content store ready: ${STORAGE_DIR}`);

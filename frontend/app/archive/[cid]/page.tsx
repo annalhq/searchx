@@ -18,7 +18,10 @@ import {
   Image as ImageIcon,
   Database,
   Download,
-  RefreshCw,
+  FolderOpen,
+  Files,
+  Copy,
+  Check,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -33,6 +36,11 @@ interface ArchivedResult {
   contentHash: string;
   capturedAt: string;
   snapshotError?: string | null;
+  /** Pinata mirror backup */
+  folderCID?: string;
+  folderGatewayUrl?: string;
+  mirrorIndexUrl?: string;
+  mirrorFileCount?: number;
 }
 
 interface ArchiveMetadata {
@@ -60,7 +68,7 @@ function shortHash(h: string) {
 
 // ─── Viewer Tabs ──────────────────────────────────────────────────────────────
 
-type Tab = "screenshot" | "html" | "metadata";
+type Tab = "screenshot" | "html" | "metadata" | "mirror";
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -78,6 +86,14 @@ export default function ArchiveViewerPage({
   const [activeResult, setActiveResult] = useState(0);
   const [activeTab, setActiveTab] = useState<Tab>("screenshot");
   const [htmlLoading, setHtmlLoading] = useState(false);
+  const [mirrorLoading, setMirrorLoading] = useState(false);
+  const [copied, setCopied] = useState("");
+
+  async function handleCopy(text: string, key: string) {
+    await navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(""), 2000);
+  }
 
   useEffect(() => {
     async function loadMeta() {
@@ -296,7 +312,7 @@ export default function ArchiveViewerPage({
                 </div>
 
                 {/* Tab bar */}
-                <div className="tabs tabs-boxed bg-base-100 border border-base-300 rounded-xl p-1 w-fit">
+                <div className="tabs tabs-boxed bg-base-100 border border-base-300 rounded-xl p-1 w-fit flex-wrap">
                   <button
                     className={`tab tab-sm gap-1.5 ${activeTab === "screenshot" ? "tab-active" : ""}`}
                     onClick={() => setActiveTab("screenshot")}
@@ -318,6 +334,21 @@ export default function ArchiveViewerPage({
                     <FileText size={12} />
                     Metadata
                   </button>
+                  {/* Mirror tab — only show if folderCID is present */}
+                  {currentResult.folderCID && (
+                    <button
+                      className={`tab tab-sm gap-1.5 ${
+                        activeTab === "mirror"
+                          ? "tab-active [--tab-bg:oklch(var(--a)/1)] [--tab-border-color:oklch(var(--a)/1)]"
+                          : ""
+                      }`}
+                      onClick={() => setActiveTab("mirror")}
+                    >
+                      <FolderOpen size={12} />
+                      Mirror Backup
+                      <span className="badge badge-xs badge-accent ml-0.5">IPFS</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* ── Screenshot tab ── */}
@@ -406,6 +437,114 @@ export default function ArchiveViewerPage({
                         <p className="text-sm">No HTML snapshot available</p>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* ── Mirror Backup tab ── */}
+                {activeTab === "mirror" && currentResult.folderCID && (
+                  <div className="bg-base-100 rounded-2xl border border-accent/30 overflow-hidden">
+                    {/* Header */}
+                    <div className="px-4 py-3 border-b border-accent/20 bg-accent/5 flex items-center gap-2">
+                      <FolderOpen size={14} className="text-accent" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-accent">Mirror Backup — Pinata IPFS</p>
+                        <p className="text-[0.6rem] text-base-content/40 mt-0.5">
+                          Full site clone with all assets (HTML + CSS + JS + images)
+                        </p>
+                      </div>
+                      {currentResult.mirrorFileCount ? (
+                        <div className="flex items-center gap-1 text-[0.6rem] text-base-content/50 shrink-0">
+                          <Files size={10} />
+                          {currentResult.mirrorFileCount} files
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* CID + links row */}
+                    <div className="px-4 py-3 border-b border-base-300 space-y-2">
+                      {/* Folder CID */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[0.6rem] text-base-content/40 w-20 shrink-0">Folder CID</span>
+                        <code className="flex-1 text-[0.65rem] font-mono text-base-content/60 bg-base-200 px-2 py-1 rounded truncate">
+                          {currentResult.folderCID}
+                        </code>
+                        <button
+                          onClick={() => handleCopy(currentResult.folderCID!, "foldercid")}
+                          className="btn btn-ghost btn-xs p-1"
+                          title="Copy CID"
+                        >
+                          {copied === "foldercid"
+                            ? <Check size={11} className="text-success" />
+                            : <Copy size={11} className="text-base-content/40" />}
+                        </button>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex gap-2 flex-wrap">
+                        {currentResult.mirrorIndexUrl && (
+                          <a
+                            href={currentResult.mirrorIndexUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-accent btn-xs gap-1 rounded-lg"
+                          >
+                            <Globe size={11} />
+                            Open Mirrored Site
+                            <ExternalLink size={9} />
+                          </a>
+                        )}
+                        {currentResult.folderGatewayUrl && (
+                          <a
+                            href={currentResult.folderGatewayUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-ghost btn-xs gap-1 rounded-lg border border-base-300"
+                          >
+                            <FolderOpen size={11} />
+                            Browse Folder
+                            <ExternalLink size={9} />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Embedded preview */}
+                    {currentResult.mirrorIndexUrl && (
+                      <div className="relative" style={{ height: "70vh" }}>
+                        {mirrorLoading && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-base-200 z-10 gap-3">
+                            <div className="relative">
+                              <div className="w-12 h-12 rounded-full border-2 border-accent/20 border-t-accent animate-spin" />
+                              <FolderOpen size={18} className="absolute inset-0 m-auto text-accent" />
+                            </div>
+                            <p className="text-xs text-base-content/50">Loading mirror backup from Pinata…</p>
+                          </div>
+                        )}
+                        <iframe
+                          src={currentResult.mirrorIndexUrl}
+                          className="w-full h-full border-0"
+                          title={`Mirror of ${currentResult.title}`}
+                          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                          onLoad={() => setMirrorLoading(false)}
+                          onLoadStart={() => setMirrorLoading(true)}
+                        />
+                      </div>
+                    )}
+
+                    {/* Info footer */}
+                    <div className="px-4 py-2.5 bg-base-200/60 flex items-center gap-2 text-[0.6rem] text-base-content/40 border-t border-base-300">
+                      <Shield size={9} />
+                      <span>Pinned to Pinata — accessible even if the original site goes offline</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Mirror tab placeholder when no folderCID */}
+                {activeTab === "mirror" && !currentResult.folderCID && (
+                  <div className="bg-base-100 rounded-2xl border border-base-300 p-10 text-center text-base-content/30">
+                    <FolderOpen size={32} className="mx-auto mb-3 opacity-40" />
+                    <p className="text-sm font-medium">No mirror backup available</p>
+                    <p className="text-xs mt-1">Add PINATA_JWT to .env and re-archive to enable Pinata uploads.</p>
                   </div>
                 )}
 

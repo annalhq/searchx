@@ -4,20 +4,23 @@
  * POST /api/archive
  * Body: { query: string, results: [{ url, title, content }] }
  *
- * Flow:
- *   1. Capture full-page screenshot + rendered HTML via Puppeteer for each URL
- *   2. Upload screenshot (PNG) and HTML to IPFS → individual CIDs
- *   3. SHA-256 hash each result's content
- *   4. Build Merkle tree of all content hashes → Merkle root
- *   5. Upload metadata archive JSON to IPFS → Master CID
- *   6. Store (queryHash, merkleRoot, masterCID) on blockchain → proof ID + tx hash
- *   7. Return proof ID + verification data + gateway URLs
+ * Flow per URL:
+ *   1. captureSnapshot  → screenshot (PNG/base64) + rendered HTML + metadata
+ *   2. uploadScreenshotToIPFS / uploadTextToIPFS → individual CIDs
+ *   3. mirrorSite       → full site mirror in data/mirror-backup/<hash>/
+ *   4. uploadFolderToPinata → folder CID + gateway URL (Pinata cloud)
+ *   5. SHA-256 each result → Merkle tree root
+ *   6. Upload master metadata JSON to IPFS → masterCID
+ *   7. Anchor (queryHash, merkleRoot, masterCID) on blockchain → proofId + txHash
+ *   8. Return everything including per-result folderCID + mirrorIndexUrl
  */
 
 const express = require("express");
-const { captureSnapshot } = require("../services/snapshot");
-const { sha256, sha256Bytes32 } = require("../services/hasher");
-const { buildMerkleTree } = require("../services/merkle");
+const { captureSnapshot }        = require("../services/snapshot");
+const { mirrorSite }             = require("../services/mirror");
+const { uploadFolderToPinata }   = require("../services/pinata");
+const { sha256, sha256Bytes32 }  = require("../services/hasher");
+const { buildMerkleTree }        = require("../services/merkle");
 const {
   uploadToIPFS,
   uploadTextToIPFS,
@@ -34,7 +37,6 @@ router.post("/", async (req, res) => {
   if (!query || !query.trim()) {
     return res.status(400).json({ error: "Missing 'query' field." });
   }
-
   if (!results || !Array.isArray(results) || results.length === 0) {
     return res.status(400).json({ error: "Missing or empty 'results' array." });
   }
@@ -42,15 +44,15 @@ router.post("/", async (req, res) => {
   try {
     console.log(`\n📦 Archive request: query="${query}", ${results.length} result(s)`);
 
-    // ── 1. Snapshot each result ──────────────────────────────────────────────
+    // ── 1. Process each result ────────────────────────────────────────────────
     const archivedResults = [];
 
     for (const result of results) {
       console.log(`\n   🔍 Processing: ${result.url}`);
 
+      // ── 1a. Screenshot + rendered HTML (Puppeteer) ──────────────────────────
       const snapshot = await captureSnapshot(result.url);
 
-      // Upload HTML and screenshot separately to IPFS
       const htmlCID = snapshot.html
         ? await uploadTextToIPFS(snapshot.html, "page.html")
         : "";
@@ -59,55 +61,102 @@ router.post("/", async (req, res) => {
         ? await uploadScreenshotToIPFS(snapshot.screenshot, result.url)
         : "";
 
+      // ── 1b. Full site mirror → local folder ─────────────────────────────────
+      let folderCID        = "";
+      let folderGatewayUrl = "";
+      let mirrorIndexUrl   = "";
+      let mirrorFileCount  = 0;
+
+      try {
+        const mirrorPath = await mirrorSite(result.url);
+        if (mirrorPath) {
+          // Count files for reporting
+          const fs   = require("fs");
+          const walk = (d) => {
+            let n = 0;
+            try {
+              for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+                n += e.isDirectory() ? walk(require("path").join(d, e.name)) : 1;
+              }
+            } catch { /**/ }
+            return n;
+          };
+          mirrorFileCount = walk(mirrorPath);
+
+          // ── 1c. Upload mirror folder to Pinata ─────────────────────────────
+          const urlObj   = new URL(result.url);
+          const siteName = `mirror-backup/${urlObj.hostname}`;
+          const pinata   = await uploadFolderToPinata(mirrorPath, siteName);
+
+          if (pinata) {
+            folderCID        = pinata.cid;
+            folderGatewayUrl = pinata.gatewayUrl;
+            mirrorIndexUrl   = pinata.indexUrl;
+          }
+        }
+      } catch (mirrorErr) {
+        console.warn(`   ⚠️  Mirror/Pinata step skipped: ${mirrorErr.message}`);
+      }
+
       archivedResults.push({
-        url: result.url,
-        title: snapshot.title || result.title || "",
-        description: snapshot.description || "",
-        snippet: result.content || snapshot.text.substring(0, 500) || "",
-        text: snapshot.text,
-        links: snapshot.links,
-        images: snapshot.images,
+        url:             result.url,
+        title:           snapshot.title  || result.title || "",
+        description:     snapshot.description || "",
+        snippet:         result.content  || (snapshot.text || "").substring(0, 500) || "",
+        text:            snapshot.text || "",
+        links:           snapshot.links,
+        images:          snapshot.images,
+        // IPFS (screenshot + HTML)
         htmlCID,
         screenshotCID,
-        htmlGatewayUrl: getGatewayUrl(htmlCID),
-        screenshotGatewayUrl: getGatewayUrl(screenshotCID),
-        capturedAt: snapshot.capturedAt,
+        htmlGatewayUrl:        getGatewayUrl(htmlCID),
+        screenshotGatewayUrl:  getGatewayUrl(screenshotCID),
+        // Pinata mirror backup
+        folderCID,
+        folderGatewayUrl,
+        mirrorIndexUrl,
+        mirrorFileCount,
+        capturedAt:   snapshot.capturedAt,
         snapshotError: snapshot.error || null,
       });
     }
 
-    // ── 2. Hash each result's combined content ───────────────────────────────
+    // ── 2. Hash each result ───────────────────────────────────────────────────
     const contentStrings = archivedResults.map((r) =>
       JSON.stringify({
-        url: r.url,
-        title: r.title,
-        snippet: r.snippet,
-        htmlCID: r.htmlCID,
+        url:          r.url,
+        title:        r.title,
+        snippet:      r.snippet,
+        htmlCID:      r.htmlCID,
         screenshotCID: r.screenshotCID,
+        folderCID:    r.folderCID,
       })
     );
-
     const contentHashes = contentStrings.map((c) => sha256(c));
     console.log(`\n   Content hashes: ${contentHashes.length} computed`);
 
-    // ── 3. Build Merkle tree ─────────────────────────────────────────────────
+    // ── 3. Merkle tree ────────────────────────────────────────────────────────
     const { root: merkleRoot } = buildMerkleTree(contentStrings);
     console.log(`   Merkle root: ${merkleRoot}`);
 
-    // ── 4. Upload master metadata JSON to IPFS ───────────────────────────────
+    // ── 4. Master metadata JSON → IPFS ────────────────────────────────────────
     const masterPayload = {
-      query: query.trim(),
+      query:      query.trim(),
       archivedAt: new Date().toISOString(),
       merkleRoot,
-      results: archivedResults.map((r, i) => ({
-        url: r.url,
-        title: r.title,
-        description: r.description,
-        snippet: r.snippet,
-        htmlCID: r.htmlCID,
+      results:    archivedResults.map((r, i) => ({
+        url:          r.url,
+        title:        r.title,
+        description:  r.description,
+        snippet:      r.snippet,
+        htmlCID:      r.htmlCID,
         screenshotCID: r.screenshotCID,
-        contentHash: contentHashes[i],
-        capturedAt: r.capturedAt,
+        folderCID:    r.folderCID,
+        folderGatewayUrl: r.folderGatewayUrl,
+        mirrorIndexUrl:   r.mirrorIndexUrl,
+        mirrorFileCount:  r.mirrorFileCount,
+        contentHash:  contentHashes[i],
+        capturedAt:   r.capturedAt,
         snapshotError: r.snapshotError,
       })),
     };
@@ -115,33 +164,39 @@ router.post("/", async (req, res) => {
     const masterCID = await uploadToIPFS(masterPayload);
     console.log(`   Master CID: ${masterCID}`);
 
-    // ── 5. Store on blockchain ───────────────────────────────────────────────
-    const queryHash = sha256Bytes32(query.trim().toLowerCase());
+    // ── 5. Blockchain anchor ──────────────────────────────────────────────────
+    const queryHash  = sha256Bytes32(query.trim().toLowerCase());
     const chainResult = await storeSearch(queryHash, merkleRoot, masterCID);
     console.log(`   ✅ Proof ID: ${chainResult.proofId}, TX: ${chainResult.txHash}`);
 
-    // ── 6. Return response ───────────────────────────────────────────────────
+    // ── 6. Response ───────────────────────────────────────────────────────────
     return res.json({
-      success: true,
-      proofId: chainResult.proofId,
-      txHash: chainResult.txHash,
-      blockNumber: chainResult.blockNumber,
-      gasUsed: chainResult.gasUsed,
+      success:      true,
+      proofId:      chainResult.proofId,
+      txHash:       chainResult.txHash,
+      blockNumber:  chainResult.blockNumber,
+      gasUsed:      chainResult.gasUsed,
       queryHash,
       merkleRoot,
-      ipfsCID: masterCID,
+      ipfsCID:      masterCID,
       masterGatewayUrl: getGatewayUrl(masterCID),
-      timestamp: chainResult.timestamp,
-      resultCount: archivedResults.length,
+      timestamp:    chainResult.timestamp,
+      resultCount:  archivedResults.length,
       contentHashes,
-      // Per-result snapshot info
       snapshots: archivedResults.map((r) => ({
-        url: r.url,
-        title: r.title,
-        screenshotCID: r.screenshotCID,
+        url:                 r.url,
+        title:               r.title,
+        // Screenshot
+        screenshotCID:       r.screenshotCID,
         screenshotGatewayUrl: r.screenshotGatewayUrl,
-        htmlCID: r.htmlCID,
-        htmlGatewayUrl: r.htmlGatewayUrl,
+        // HTML
+        htmlCID:             r.htmlCID,
+        htmlGatewayUrl:      r.htmlGatewayUrl,
+        // Mirror backup (Pinata)
+        folderCID:           r.folderCID,
+        folderGatewayUrl:    r.folderGatewayUrl,
+        mirrorIndexUrl:      r.mirrorIndexUrl,
+        mirrorFileCount:     r.mirrorFileCount,
       })),
     });
   } catch (err) {

@@ -73,14 +73,18 @@ router.get("/:proofId", async (req, res) => {
       );
       queryHashMatch = recomputedQueryHash === onChain.queryHash;
 
-      // Recompute Merkle root from archived results
+      // Recompute Merkle root from archived results.
+      // IMPORTANT: The content strings must use the EXACT same fields as
+      // archive.js (lines 126-133) to produce matching hashes.
       if (ipfsContent.results && ipfsContent.results.length > 0) {
         const contentStrings = ipfsContent.results.map((r) =>
           JSON.stringify({
-            url: r.url,
-            title: r.title,
-            snippet: r.snippet,
-            pageHTML: r.pageHTML,
+            url:           r.url,
+            title:         r.title,
+            snippet:       r.snippet,
+            htmlCID:       r.htmlCID,
+            screenshotCID: r.screenshotCID,
+            folderCID:     r.folderCID,
           })
         );
 
@@ -98,9 +102,9 @@ router.get("/:proofId", async (req, res) => {
           contentHash: r.contentHash,
           recomputedHash: sha256(contentStrings[i]),
           hashMatch: r.contentHash === sha256(contentStrings[i]),
-          hasPageSnapshot: !!r.pageHTML && r.pageHTML.length > 0,
-          pageSnapshotSize: r.pageHTML ? r.pageHTML.length : 0,
-          fetchedAt: r.fetchedAt,
+          hasPageSnapshot: !!(r.htmlCID && r.htmlCID.length > 0),
+          pageSnapshotSize: r.htmlCID ? r.htmlCID.length : 0,
+          fetchedAt: r.capturedAt || r.fetchedAt,
         }));
       }
     }

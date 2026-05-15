@@ -25,10 +25,11 @@ import {
   ExternalLink,
   Filter,
   LayoutDashboard,
-  TrendingUp,
   Box,
   AlertCircle,
   ChevronDown,
+  Pin,
+  FolderOpen,
 } from "lucide-react";
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -91,6 +92,10 @@ interface BlockchainRecord {
   domain: string | null;
   title: string | null;
   resultCount: number;
+  /** Pinata mirror backup (populated when mirroring succeeded) */
+  mirrorIndexUrl: string | null;
+  folderCID: string | null;
+  mirrorFileCount: number;
 }
 
 interface RecordsResponse {
@@ -154,6 +159,7 @@ function VerifyDashboard() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [contractAddr, setContractAddr] = useState("");
   const [copied, setCopied] = useState("");
+  const [reconnecting, setReconnecting] = useState(false);
 
   // ── Verify State ────────────────────────────────────────────────────────
   const [verifyInput, setVerifyInput] = useState(
@@ -217,6 +223,19 @@ function VerifyDashboard() {
       /* */
     }
     setRecordsLoading(false);
+  }
+
+  async function handleReconnect() {
+    setReconnecting(true);
+    try {
+      await fetch("/api/backend/status/reconnect", { method: "POST" });
+      await loadStatus();
+      await loadRecords();
+    } catch {
+      /* */
+    } finally {
+      setReconnecting(false);
+    }
   }
 
   // ── Verify Handler ─────────────────────────────────────────────────────
@@ -485,18 +504,19 @@ function VerifyDashboard() {
                 </p>
               </div>
 
-              <div className="bg-base-100 border border-base-300 rounded-xl p-4">
+              {/* Pinata Backups stat card */}
+              <div className="bg-base-100 border border-accent/20 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-base-content/40 font-medium uppercase tracking-wider">
-                    Chain ID
+                    Pinata Backups
                   </span>
-                  <TrendingUp size={16} className="text-accent/60" />
+                  <Pin size={16} className="text-accent/60" />
                 </div>
                 <div className="text-2xl font-bold text-accent tabular-nums">
-                  {status?.blockchain?.chainId || "—"}
+                  {records.filter((r) => r.mirrorIndexUrl).length}
                 </div>
                 <p className="text-xs text-base-content/30 mt-0.5">
-                  Hardhat Local
+                  Sites mirrored to IPFS
                 </p>
               </div>
 
@@ -515,6 +535,18 @@ function VerifyDashboard() {
                 <p className="text-xs text-base-content/30 mt-0.5">
                   {connected ? "Blockchain synced" : "Node not running"}
                 </p>
+                {!connected && (
+                  <button
+                    className="btn btn-xs btn-outline btn-warning mt-2 gap-1 w-full"
+                    onClick={handleReconnect}
+                    disabled={reconnecting}
+                  >
+                    {reconnecting
+                      ? <Loader2 size={11} className="animate-spin" />
+                      : <RefreshCw size={11} />}
+                    {reconnecting ? "Connecting…" : "Reconnect"}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -590,6 +622,7 @@ function VerifyDashboard() {
                         <th>ID</th>
                         <th>Domain</th>
                         <th>Title / Query</th>
+                        <th>Pinata Backup</th>
                         <th>Time</th>
                         <th></th>
                       </tr>
@@ -615,11 +648,30 @@ function VerifyDashboard() {
                               </span>
                             )}
                           </td>
-                          <td className="max-w-[200px] truncate text-sm">
+                          <td className="max-w-[180px] truncate text-sm">
                             {r.title || r.query || (
                               <span className="text-base-content/20">
                                 —
                               </span>
+                            )}
+                          </td>
+                          <td>
+                            {r.mirrorIndexUrl ? (
+                              <a
+                                href={r.mirrorIndexUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-accent hover:text-accent/70 transition-colors"
+                                title={r.mirrorIndexUrl}
+                              >
+                                <Pin size={11} />
+                                <span className="text-xs underline-offset-2 hover:underline">
+                                  {r.mirrorFileCount ? `${r.mirrorFileCount} files` : "View"}
+                                </span>
+                                <ExternalLink size={9} className="opacity-50" />
+                              </a>
+                            ) : (
+                              <span className="text-xs text-base-content/20">—</span>
                             )}
                           </td>
                           <td className="text-xs text-base-content/40">
@@ -724,6 +776,34 @@ function VerifyDashboard() {
                     </div>
                   </div>
 
+                  {/* Pinata mirror backup link — shown if present in response */}
+                  {(anchorResult as unknown as { snapshots?: { mirrorIndexUrl?: string; mirrorFileCount?: number }[] }).snapshots?.[0]?.mirrorIndexUrl && (
+                    <div className="rounded-xl border border-accent/30 bg-accent/5 overflow-hidden">
+                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-accent/20 bg-accent/8">
+                        <Pin size={14} className="text-accent" />
+                        <span className="text-sm font-semibold text-accent">Pinata Mirror Backup Stored</span>
+                        {(anchorResult as unknown as { snapshots?: { mirrorFileCount?: number }[] }).snapshots?.[0]?.mirrorFileCount ? (
+                          <span className="ml-auto badge badge-sm badge-accent gap-1">
+                            <FolderOpen size={10} />
+                            {(anchorResult as unknown as { snapshots?: { mirrorFileCount?: number }[] }).snapshots![0].mirrorFileCount} files
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="px-4 py-3 flex items-center gap-2">
+                        <Globe size={13} className="text-accent/60 shrink-0" />
+                        <a
+                          href={(anchorResult as unknown as { snapshots?: { mirrorIndexUrl?: string }[] }).snapshots![0].mirrorIndexUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-accent hover:underline underline-offset-2 truncate flex-1"
+                        >
+                          {(anchorResult as unknown as { snapshots?: { mirrorIndexUrl?: string }[] }).snapshots![0].mirrorIndexUrl}
+                        </a>
+                        <ExternalLink size={12} className="shrink-0 text-accent/50" />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="bg-base-200 rounded-xl p-4">
                       <div className="text-xs font-medium text-base-content/40 uppercase tracking-wider mb-1">
@@ -823,26 +903,27 @@ function VerifyDashboard() {
               <ul className="steps steps-vertical text-xs">
                 <li className="step step-primary">
                   <div className="text-left ml-2">
-                    <strong>Fetch</strong> — Page HTML is downloaded from
-                    the URL
+                    <strong>Snapshot</strong> — Puppeteer captures a screenshot + rendered HTML
                   </div>
                 </li>
                 <li className="step step-primary">
                   <div className="text-left ml-2">
-                    <strong>Hash</strong> — SHA-256 content hash + Merkle
-                    tree root computed
+                    <strong>Mirror</strong> — All assets (CSS, JS, images) are downloaded locally
                   </div>
                 </li>
                 <li className="step step-primary">
                   <div className="text-left ml-2">
-                    <strong>Store</strong> — Full content snapshot saved to
-                    local content store
+                    <strong>Pinata Upload</strong> — The mirror folder is pinned to IPFS via Pinata cloud
                   </div>
                 </li>
                 <li className="step step-primary">
                   <div className="text-left ml-2">
-                    <strong>Anchor</strong> — Hashes + CID written to
-                    blockchain smart contract
+                    <strong>Hash</strong> — SHA-256 content hash + Merkle tree root computed
+                  </div>
+                </li>
+                <li className="step step-primary">
+                  <div className="text-left ml-2">
+                    <strong>Anchor</strong> — Hashes + CID written to blockchain smart contract
                   </div>
                 </li>
               </ul>
@@ -1352,6 +1433,7 @@ function VerifyDashboard() {
                         <th className="w-16">ID</th>
                         <th>Domain</th>
                         <th>Title / Query</th>
+                        <th>Pinata Backup</th>
                         <th>Query Hash</th>
                         <th>Merkle Root</th>
                         <th>Time</th>
@@ -1371,7 +1453,7 @@ function VerifyDashboard() {
                                   size={12}
                                   className="text-base-content/30 shrink-0"
                                 />
-                                <span className="text-sm truncate max-w-[140px]">
+                                <span className="text-sm truncate max-w-[130px]">
                                   {r.domain}
                                 </span>
                               </div>
@@ -1381,10 +1463,29 @@ function VerifyDashboard() {
                               </span>
                             )}
                           </td>
-                          <td className="max-w-[180px]">
+                          <td className="max-w-[160px]">
                             <span className="text-sm truncate block">
                               {r.title || r.query || "—"}
                             </span>
+                          </td>
+                          <td>
+                            {r.mirrorIndexUrl ? (
+                              <a
+                                href={r.mirrorIndexUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-accent hover:text-accent/70 transition-colors group/pin"
+                                title={r.mirrorIndexUrl}
+                              >
+                                <Pin size={11} className="shrink-0" />
+                                <span className="text-xs underline-offset-2 group-hover/pin:underline">
+                                  {r.mirrorFileCount ? `${r.mirrorFileCount} files` : "View"}
+                                </span>
+                                <ExternalLink size={9} className="opacity-50" />
+                              </a>
+                            ) : (
+                              <span className="text-[0.65rem] text-base-content/20">—</span>
+                            )}
                           </td>
                           <td>
                             <code
@@ -1406,15 +1507,29 @@ function VerifyDashboard() {
                             {timeAgo(r.timestamp)}
                           </td>
                           <td className="text-right">
-                            <button
-                              className="btn btn-primary btn-xs btn-outline rounded-full"
-                              onClick={() => {
-                                setVerifyInput(String(r.id));
-                                handleVerify(String(r.id));
-                              }}
-                            >
-                              Verify
-                            </button>
+                            <div className="flex items-center gap-1.5 justify-end flex-wrap">
+                              {r.mirrorIndexUrl && (
+                                <a
+                                  href={r.mirrorIndexUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-accent btn-xs btn-outline rounded-full gap-0.5"
+                                  title="Open Pinata mirror"
+                                >
+                                  <Pin size={10} />
+                                  Pinata
+                                </a>
+                              )}
+                              <button
+                                className="btn btn-primary btn-xs btn-outline rounded-full"
+                                onClick={() => {
+                                  setVerifyInput(String(r.id));
+                                  handleVerify(String(r.id));
+                                }}
+                              >
+                                Verify
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

@@ -26,6 +26,7 @@ function extractDomain(url) {
 
 /**
  * Enrich a single blockchain record with its IPFS metadata.
+ * Now also extracts Pinata mirror backup links per result.
  */
 async function enrichRecord(record) {
   const enriched = {
@@ -42,6 +43,10 @@ async function enrichRecord(record) {
     domain: null,
     title: null,
     resultCount: 0,
+    // Pinata mirror backup for the first result
+    mirrorIndexUrl: null,
+    folderCID: null,
+    mirrorFileCount: 0,
   };
 
   try {
@@ -50,12 +55,16 @@ async function enrichRecord(record) {
       enriched.query = content.query || null;
       enriched.resultCount = content.results?.length || 0;
 
-      // Extract url/domain/title from first result
+      // Extract url/domain/title + Pinata data from first result
       if (content.results && content.results.length > 0) {
         const first = content.results[0];
         enriched.url = first.url || null;
         enriched.domain = first.url ? extractDomain(first.url) : null;
         enriched.title = first.title || null;
+        // Pinata mirror backup fields (present when mirroring succeeded)
+        enriched.mirrorIndexUrl = first.mirrorIndexUrl || null;
+        enriched.folderCID = first.folderCID || null;
+        enriched.mirrorFileCount = first.mirrorFileCount || 0;
       }
     }
   } catch {

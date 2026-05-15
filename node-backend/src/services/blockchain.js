@@ -21,6 +21,7 @@ let signer = null;
 let contract = null;
 let isConnected = false;
 let contractAddress = "";
+let _reconnectTimer = null;
 
 // Path to the blockchain dir (for auto-deploy)
 const BLOCKCHAIN_DIR = path.join(__dirname, "..", "..", "..", "blockchain");
@@ -162,11 +163,51 @@ async function initBlockchain() {
     console.log(`   Contract: ${contractAddress}`);
     console.log(`   Records:  ${Number(count)}`);
     isConnected = true;
+    // Cancel any pending reconnect timer now that we're connected
+    if (_reconnectTimer) {
+      clearTimeout(_reconnectTimer);
+      _reconnectTimer = null;
+    }
   } catch (err) {
     console.error(`❌ Blockchain initialisation failed: ${err.message}`);
     console.error(`   Make sure 'npx hardhat node' is running at ${config.RPC_URL}`);
     isConnected = false;
+    // Schedule a retry in 5 seconds
+    _scheduleReconnect();
   }
+}
+
+/**
+ * Schedule a reconnect attempt after a delay.
+ * Only one pending timer is kept at a time.
+ */
+function _scheduleReconnect(delayMs = 5000) {
+  if (_reconnectTimer) return; // already scheduled
+  _reconnectTimer = setTimeout(async () => {
+    _reconnectTimer = null;
+    if (!isConnected) {
+      console.log("🔄 Retrying blockchain connection...");
+      await initBlockchain();
+    }
+  }, delayMs);
+}
+
+/**
+ * Manually trigger a reconnection attempt (e.g. from an API endpoint).
+ * Cancels any existing timer and retries immediately.
+ */
+async function retryConnect() {
+  if (_reconnectTimer) {
+    clearTimeout(_reconnectTimer);
+    _reconnectTimer = null;
+  }
+  isConnected = false;
+  provider = null;
+  signer = null;
+  contract = null;
+  contractAddress = "";
+  await initBlockchain();
+  return getStatus();
 }
 
 /**
@@ -186,25 +227,14 @@ async function storeSearch(queryHash, resultHash, ipfsCID) {
   try {
     console.log(`⛓️  Storing on-chain: queryHash=${queryHash.substring(0, 14)}... resultHash=${resultHash.substring(0, 14)}...`);
 
+    // Use staticCall to get the return value (proofId) before sending the real TX.
+    // The Solidity function directly returns the assigned id, so this is reliable
+    // and avoids fragile event-log parsing in ethers v6.
+    const proofIdBig = await contract.storeSearch.staticCall(queryHash, resultHash, ipfsCID);
+    const proofId = Number(proofIdBig);
+
     const tx = await contract.storeSearch(queryHash, resultHash, ipfsCID);
     const receipt = await tx.wait();
-
-    // Parse the SearchStored event to get the proof ID
-    let proofId = null;
-    for (const log of receipt.logs) {
-      try {
-        const parsed = contract.interface.parseLog({
-          topics: log.topics,
-          data: log.data,
-        });
-        if (parsed && parsed.name === "SearchStored") {
-          proofId = Number(parsed.args.id);
-          break;
-        }
-      } catch {
-        // Not our event, skip
-      }
-    }
 
     console.log(`✅ On-chain stored: proofId=${proofId}, tx=${receipt.hash}, block=${receipt.blockNumber}`);
 
@@ -303,6 +333,7 @@ function getStatus() {
 
 module.exports = {
   initBlockchain,
+  retryConnect,
   storeSearch,
   getSearch,
   getSearchCount,

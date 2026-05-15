@@ -12,7 +12,7 @@ const express = require("express");
 const cors = require("cors");
 const config = require("./config");
 const { initIPFS } = require("./services/ipfs");
-const { initBlockchain, getSearchCount, getStatus } = require("./services/blockchain");
+const { initBlockchain, getSearchCount, getStatus, retryConnect } = require("./services/blockchain");
 
 // Routes
 const searchRouter = require("./routes/search");
@@ -54,6 +54,16 @@ app.get("/api/status", async (req, res) => {
   });
 });
 
+// Manual reconnect trigger
+app.post("/api/status/reconnect", async (req, res) => {
+  try {
+    const status = await retryConnect();
+    res.json({ status: "ok", blockchain: status });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Start ────────────────────────────────────────────────────────────────────
 async function start() {
   console.log("\n╔══════════════════════════════════════════╗");
@@ -77,3 +87,5 @@ start().catch((err) => {
   console.error("❌ Failed to start server:", err);
   process.exit(1);
 });
+
+// Trigger restart
