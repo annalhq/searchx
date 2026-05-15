@@ -1,7 +1,23 @@
 @import "tailwindcss";
 
 @plugin "daisyui" {
-  themes: light --default, dark --prefersdark;
+  themes:
+    light --default,
+    dark --prefersdark,
+    cupcake,
+    synthwave,
+    cyberpunk,
+    dracula,
+    forest,
+    aqua,
+    lofi,
+    black,
+    luxury,
+    night,
+    coffee,
+    winter,
+    dim,
+    nord;
 }
 
 /* ── Design tokens ─────────────────────────────────────── */

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import ThemeToggle from "../components/ThemeToggle";
 import {
   ShieldCheck,
   ShieldX,
@@ -30,6 +31,10 @@ import {
   ChevronDown,
   Pin,
   FolderOpen,
+  Camera,
+  Image as ImageIcon,
+  Archive,
+  BookOpen,
 } from "lucide-react";
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -96,6 +101,9 @@ interface BlockchainRecord {
   mirrorIndexUrl: string | null;
   folderCID: string | null;
   mirrorFileCount: number;
+  /** Screenshot thumbnail */
+  screenshotCID: string | null;
+  screenshotGatewayUrl: string | null;
 }
 
 interface RecordsResponse {
@@ -372,6 +380,8 @@ function VerifyDashboard() {
           </Link>
         </div>
         <div className="navbar-end gap-2">
+          {/* Theme toggle */}
+          <ThemeToggle />
           {/* Chain badge */}
           <div
             className={`badge badge-sm gap-1.5 ${connected ? "badge-success" : "badge-error"}`}
@@ -620,6 +630,7 @@ function VerifyDashboard() {
                     <thead>
                       <tr className="text-xs text-base-content/40 uppercase tracking-wider">
                         <th>ID</th>
+                        <th>Snapshot</th>
                         <th>Domain</th>
                         <th>Title / Query</th>
                         <th>Pinata Backup</th>
@@ -632,6 +643,32 @@ function VerifyDashboard() {
                         <tr key={r.id} className="hover">
                           <td className="font-mono text-primary font-semibold">
                             #{r.id}
+                          </td>
+                          <td className="w-16">
+                            {r.screenshotGatewayUrl ? (
+                              <div className="relative group/thumb">
+                                <img
+                                  src={`/api/backend${r.screenshotGatewayUrl}`}
+                                  alt={`Snapshot of ${r.domain || r.url}`}
+                                  className="w-14 h-9 object-cover object-top rounded border border-base-300 cursor-pointer"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = "none";
+                                  }}
+                                />
+                                {/* Enlarged preview on hover */}
+                                <div className="hidden group-hover/thumb:flex absolute left-16 top-0 z-50 w-56 h-36 rounded-lg border border-base-300 shadow-2xl overflow-hidden bg-base-200">
+                                  <img
+                                    src={`/api/backend${r.screenshotGatewayUrl}`}
+                                    alt="Preview"
+                                    className="w-full h-full object-cover object-top"
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="w-14 h-9 rounded border border-base-300 bg-base-200 flex items-center justify-center">
+                                <ImageIcon size={12} className="text-base-content/20" />
+                              </div>
+                            )}
                           </td>
                           <td>
                             {r.domain ? (
@@ -678,15 +715,28 @@ function VerifyDashboard() {
                             {timeAgo(r.timestamp)}
                           </td>
                           <td>
-                            <button
-                              className="btn btn-primary btn-xs btn-outline rounded-full"
-                              onClick={() => {
-                                setVerifyInput(String(r.id));
-                                handleVerify(String(r.id));
-                              }}
-                            >
-                              Verify
-                            </button>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {r.ipfsCID && (
+                                <Link
+                                  href={`/archive/${encodeURIComponent(r.ipfsCID)}`}
+                                  target="_blank"
+                                  className="btn btn-ghost btn-xs rounded-full gap-0.5 border border-base-300"
+                                  title="Open Archive Viewer"
+                                >
+                                  <Archive size={10} />
+                                  View
+                                </Link>
+                              )}
+                              <button
+                                className="btn btn-primary btn-xs btn-outline rounded-full"
+                                onClick={() => {
+                                  setVerifyInput(String(r.id));
+                                  handleVerify(String(r.id));
+                                }}
+                              >
+                                Verify
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1401,141 +1451,165 @@ function VerifyDashboard() {
               </div>
             )}
 
-            {/* Records Table */}
+            {/* Records Cards */}
             {recordsLoading ? (
-              <div className="flex items-center justify-center py-12 text-base-content/30 gap-2 text-sm">
-                <Loader2 size={16} className="animate-spin" /> Loading
-                records…
+              <div className="flex items-center justify-center py-16 text-base-content/30 gap-3 text-sm">
+                <Loader2 size={20} className="animate-spin" /> Loading records…
               </div>
             ) : filteredRecords.length === 0 ? (
-              <div className="text-center py-12 text-base-content/30">
-                <Database
-                  size={32}
-                  className="mx-auto mb-3 opacity-30"
-                />
-                <p className="font-medium">
-                  {searchQuery
-                    ? "No matching records found"
-                    : "No records yet"}
+              <div className="text-center py-16 text-base-content/30">
+                <Database size={36} className="mx-auto mb-3 opacity-25" />
+                <p className="font-semibold text-base">
+                  {searchQuery ? "No matching records found" : "No records yet"}
                 </p>
-                <p className="text-sm mt-1">
+                <p className="text-sm mt-1 opacity-70">
                   {searchQuery
                     ? "Try adjusting your search filter"
                     : "Archive a search result or anchor a URL to create the first record."}
                 </p>
               </div>
             ) : (
-              <div className="bg-base-100 border border-base-300 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="table table-sm">
-                    <thead>
-                      <tr className="bg-base-200/50 text-xs text-base-content/40 uppercase tracking-wider">
-                        <th className="w-16">ID</th>
-                        <th>Domain</th>
-                        <th>Title / Query</th>
-                        <th>Pinata Backup</th>
-                        <th>Query Hash</th>
-                        <th>Merkle Root</th>
-                        <th>Time</th>
-                        <th className="text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredRecords.map((r) => (
-                        <tr key={r.id} className="hover">
-                          <td className="font-mono font-semibold text-primary">
-                            #{r.id}
-                          </td>
-                          <td>
-                            {r.domain ? (
-                              <div className="flex items-center gap-1.5">
-                                <Globe
-                                  size={12}
-                                  className="text-base-content/30 shrink-0"
-                                />
-                                <span className="text-sm truncate max-w-[130px]">
-                                  {r.domain}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-base-content/20">
-                                —
-                              </span>
-                            )}
-                          </td>
-                          <td className="max-w-[160px]">
-                            <span className="text-sm truncate block">
-                              {r.title || r.query || "—"}
-                            </span>
-                          </td>
-                          <td>
-                            {r.mirrorIndexUrl ? (
-                              <a
-                                href={r.mirrorIndexUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-accent hover:text-accent/70 transition-colors group/pin"
-                                title={r.mirrorIndexUrl}
-                              >
-                                <Pin size={11} className="shrink-0" />
-                                <span className="text-xs underline-offset-2 group-hover/pin:underline">
-                                  {r.mirrorFileCount ? `${r.mirrorFileCount} files` : "View"}
-                                </span>
-                                <ExternalLink size={9} className="opacity-50" />
-                              </a>
-                            ) : (
-                              <span className="text-[0.65rem] text-base-content/20">—</span>
-                            )}
-                          </td>
-                          <td>
-                            <code
-                              className="text-[0.65rem] font-mono text-base-content/40"
-                              title={r.queryHash}
-                            >
-                              {truncHash(r.queryHash, 6)}
-                            </code>
-                          </td>
-                          <td>
-                            <code
-                              className="text-[0.65rem] font-mono text-base-content/40"
-                              title={r.resultHash}
-                            >
-                              {truncHash(r.resultHash, 6)}
-                            </code>
-                          </td>
-                          <td className="text-xs text-base-content/40">
-                            {timeAgo(r.timestamp)}
-                          </td>
-                          <td className="text-right">
-                            <div className="flex items-center gap-1.5 justify-end flex-wrap">
-                              {r.mirrorIndexUrl && (
-                                <a
-                                  href={r.mirrorIndexUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-accent btn-xs btn-outline rounded-full gap-0.5"
-                                  title="Open Pinata mirror"
-                                >
-                                  <Pin size={10} />
-                                  Pinata
-                                </a>
+              <div className="grid grid-cols-1 gap-3">
+                {filteredRecords.map((r) => (
+                  <div
+                    key={r.id}
+                    className="group bg-base-100 border border-base-300 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200"
+                  >
+                    <div className="flex gap-0">
+
+                      {/* ── Screenshot strip ── */}
+                      <div className="relative w-32 shrink-0 bg-base-200 overflow-hidden">
+                        {r.screenshotGatewayUrl ? (
+                          <img
+                            src={`/api/backend${r.screenshotGatewayUrl}`}
+                            alt={`Snapshot of ${r.domain || "site"}`}
+                            className="w-full h-full object-cover object-top"
+                            onError={(e) => {
+                              const el = e.target as HTMLImageElement;
+                              el.parentElement!.innerHTML =
+                                '<div class="flex items-center justify-center h-full"><svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\' class=\'opacity-20\'><rect width=\'18\' height=\'18\' x=\'3\' y=\'3\' rx=\'2\'/><circle cx=\'9\' cy=\'9\' r=\'2\'/><path d=\'m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\'/></svg></div>';
+                            }}
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full gap-1.5 py-4">
+                            <Camera size={20} className="text-base-content/15" />
+                            <span className="text-[0.55rem] text-base-content/20 text-center px-2">No snapshot</span>
+                          </div>
+                        )}
+                        {/* Proof ID badge */}
+                        <div className="absolute top-2 left-2 bg-base-100/90 backdrop-blur-sm text-primary font-mono font-bold text-xs px-1.5 py-0.5 rounded-md shadow">
+                          #{r.id}
+                        </div>
+                      </div>
+
+                      {/* ── Card body ── */}
+                      <div className="flex-1 min-w-0 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            {/* Title */}
+                            <p className="font-semibold text-sm truncate leading-tight">
+                              {r.title || r.query || (
+                                <span className="text-base-content/30 font-normal">Untitled Archive</span>
                               )}
-                              <button
-                                className="btn btn-primary btn-xs btn-outline rounded-full"
-                                onClick={() => {
-                                  setVerifyInput(String(r.id));
-                                  handleVerify(String(r.id));
-                                }}
-                              >
-                                Verify
-                              </button>
+                            </p>
+                            {/* Domain + URL */}
+                            {r.domain && (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <Globe size={10} className="text-base-content/30 shrink-0" />
+                                <span className="text-xs text-base-content/50 truncate">{r.domain}</span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Timestamp */}
+                          <div className="text-right shrink-0">
+                            <div className="text-xs text-base-content/40 font-medium">{timeAgo(r.timestamp)}</div>
+                            <div className="text-[0.6rem] text-base-content/25 mt-0.5">{fmtDate(r.recordedAt)}</div>
+                          </div>
+                        </div>
+
+                        {/* Hash chips row */}
+                        <div className="flex flex-wrap gap-1.5 mt-2.5">
+                          <div className="flex items-center gap-1 bg-base-200 rounded px-1.5 py-0.5">
+                            <Hash size={9} className="text-base-content/30" />
+                            <code className="text-[0.6rem] font-mono text-base-content/45" title={r.queryHash}>
+                              Q: {truncHash(r.queryHash, 5)}
+                            </code>
+                          </div>
+                          <div className="flex items-center gap-1 bg-base-200 rounded px-1.5 py-0.5">
+                            <Hash size={9} className="text-base-content/30" />
+                            <code className="text-[0.6rem] font-mono text-base-content/45" title={r.resultHash}>
+                              M: {truncHash(r.resultHash, 5)}
+                            </code>
+                          </div>
+                          {r.ipfsCID && (
+                            <div className="flex items-center gap-1 bg-primary/5 border border-primary/15 rounded px-1.5 py-0.5">
+                              <Database size={9} className="text-primary/50" />
+                              <code className="text-[0.6rem] font-mono text-primary/60" title={r.ipfsCID}>
+                                {truncHash(r.ipfsCID, 5)}
+                              </code>
                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          )}
+                          {r.mirrorIndexUrl && (
+                            <div className="flex items-center gap-1 bg-accent/5 border border-accent/20 rounded px-1.5 py-0.5">
+                              <Pin size={9} className="text-accent/60" />
+                              <span className="text-[0.6rem] text-accent/70">
+                                {r.mirrorFileCount ? `${r.mirrorFileCount} files` : "Pinata"}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+                          {r.ipfsCID && (
+                            <Link
+                              href={`/archive/${encodeURIComponent(r.ipfsCID)}`}
+                              target="_blank"
+                              className="btn btn-primary btn-xs rounded-full gap-1"
+                            >
+                              <BookOpen size={11} />
+                              View Archive
+                              <ExternalLink size={9} />
+                            </Link>
+                          )}
+                          {r.mirrorIndexUrl && (
+                            <a
+                              href={r.mirrorIndexUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-accent btn-xs btn-outline rounded-full gap-1"
+                            >
+                              <Pin size={10} />
+                              Pinata Mirror
+                              <ExternalLink size={9} />
+                            </a>
+                          )}
+                          <button
+                            className="btn btn-ghost btn-xs rounded-full gap-1 border border-base-300 ml-auto"
+                            onClick={() => {
+                              setVerifyInput(String(r.id));
+                              handleVerify(String(r.id));
+                            }}
+                          >
+                            <ShieldCheck size={11} />
+                            Verify
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-xs p-1"
+                            onClick={() => copyText(r.ipfsCID, `cid-${r.id}`)}
+                            title="Copy CID"
+                          >
+                            {copied === `cid-${r.id}` ? (
+                              <Check size={12} className="text-success" />
+                            ) : (
+                              <Copy size={12} className="text-base-content/30" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

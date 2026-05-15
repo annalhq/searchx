@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import SearchBar from "./components/SearchBar";
+import ThemeToggle from "./components/ThemeToggle";
 import {
   Globe,
   Newspaper,
@@ -39,6 +40,10 @@ const QUICK_LINKS = [
 export default function HomePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-dvh px-4 py-8">
+      {/* Theme toggle — fixed top-right */}
+      <div className="fixed top-3 right-3 z-50">
+        <ThemeToggle />
+      </div>
       {/* Logo / wordmark */}
       <div className="mb-10 text-center animate-fadeIn">
         <h1 className="text-5xl sm:text-6xl font-bold tracking-tight text-base-content leading-none">

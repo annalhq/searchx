@@ -6,6 +6,7 @@ import FilterBar from "../components/FilterBar";
 import ResultCard, { SearXNGResult } from "../components/ResultCard";
 import ResultsSkeleton from "../components/ResultsSkeleton";
 import Pagination from "../components/Pagination";
+import ThemeToggle from "../components/ThemeToggle";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -117,6 +118,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               <SearchBar initialQuery={query} compact />
             </Suspense>
           </div>
+
+          {/* Theme toggle */}
+          <ThemeToggle />
         </div>
       </header>
 

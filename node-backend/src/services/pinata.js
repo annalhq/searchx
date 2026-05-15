@@ -96,7 +96,7 @@ async function uploadFolderToPinata(folderPath, folderName = "mirror-backup") {
 
     const cid        = resp.data.IpfsHash;
     const gatewayUrl = `${PINATA_GATEWAY}/ipfs/${cid}`;
-    const indexUrl   = `${gatewayUrl}/index.html`;
+    const indexUrl   = `${gatewayUrl}/`;
 
     console.log(`   ✅ Pinata upload complete: ${cid}`);
     console.log(`      Browse: ${indexUrl}`);

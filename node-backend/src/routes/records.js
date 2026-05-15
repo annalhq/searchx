@@ -47,6 +47,9 @@ async function enrichRecord(record) {
     mirrorIndexUrl: null,
     folderCID: null,
     mirrorFileCount: 0,
+    // Screenshot
+    screenshotCID: null,
+    screenshotGatewayUrl: null,
   };
 
   try {
@@ -65,6 +68,13 @@ async function enrichRecord(record) {
         enriched.mirrorIndexUrl = first.mirrorIndexUrl || null;
         enriched.folderCID = first.folderCID || null;
         enriched.mirrorFileCount = first.mirrorFileCount || 0;
+        // Screenshot (served via backend proxy route /api/archive/screenshot/:cid)
+        enriched.screenshotCID = first.screenshotCID || null;
+        if (first.screenshotCID) {
+          // Frontend proxies /api/backend/... → backend /api/...
+          // So the browser will call /api/backend/archive/screenshot/:cid
+          enriched.screenshotGatewayUrl = `/api/archive/screenshot/${first.screenshotCID}`;
+        }
       }
     }
   } catch {

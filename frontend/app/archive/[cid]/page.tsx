@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
+import ThemeToggle from "../../components/ThemeToggle";
 import {
   ArrowLeft,
   Camera,
@@ -159,6 +160,7 @@ export default function ArchiveViewerPage({
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
             <a
               href={`/verify`}
               className="btn btn-ghost btn-xs gap-1"
